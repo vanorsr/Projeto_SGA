@@ -1,0 +1,62 @@
+{% extends 'core/base.html' %}
+
+{% block conteudo %}
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Matérias</li>
+      </ol>
+    </nav>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary fw-bold mb-0">Matérias do Edital</h2>
+            <p class="text-muted small mb-0">Selecione uma disciplina para ver os tópicos</p>
+        </div>
+        
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+            📊 <span class="d-none d-md-inline ms-1">Voltar para o Painel</span>
+        </a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for materia in materias %}
+        <div class="col">
+            <div class="card h-100 shadow-sm hover-card border-0">
+                <div class="card-body border-start border-4 border-primary">
+                    <h5 class="card-title text-dark fw-bold">{{ materia.nome_materia }}</h5>
+                    <p class="card-text text-muted small">
+                        Clique para acessar os tópicos e conteúdos desta disciplina.
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-top-0 text-end">
+                    <a href="{% url 'lista_topicos' materia.id_materia %}" class="btn btn-primary btn-sm stretched-link">
+                        Acessar Tópicos ➔
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning text-center">
+                Nenhuma matéria encontrada no banco de dados.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+</style>
+
+{% endblock %}

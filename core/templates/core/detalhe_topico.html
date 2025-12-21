@@ -1,0 +1,389 @@
+{% extends 'core/base.html' %}
+
+{% block conteudo %}
+
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'lista_materias' %}">Matérias</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'lista_topicos' topico.id_materia_fk.id_materia %}">
+                {{ topico.id_materia_fk.nome_materia }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active">Estudo</li>
+      </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary mb-0">{{ topico.topico }}</h2>
+            <span class="badge bg-secondary">{{ topico.nivel_3 }}</span>
+        </div>
+    </div>
+
+    <div class="card border-primary mb-4 shadow-sm">
+        <div class="card-body d-flex justify-content-between align-items-center transition-bg" id="containerCronometro">
+            <div>
+                <h5 class="card-title text-primary mb-0">⏱️ Sessão de Estudo</h5>
+                <small class="text-muted">Registre seu foco neste tópico</small>
+            </div>
+
+            <div class="text-center">
+                <h1 class="display-4 fw-bold mb-0 text-dark" id="cronometro">00:00:00</h1>
+            </div>
+
+            <div>
+                <button onclick="iniciarCronometro()" class="btn btn-success btn-lg" id="btnPlay">▶ Iniciar</button>
+                <button onclick="pararCronometro()" class="btn btn-danger btn-lg d-none" id="btnPause">⏸ Parar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3 gap-2"> {% if not topico.o_que_e %} 
+        <button onclick="gerarResumoIA()" id="btnIA" class="btn btn-outline-primary transition-bg">
+            ✨ Gerar Conteúdo com IA
+        </button>
+        {% else %}
+        <button onclick="gerarResumoIA()" id="btnIA" class="btn btn-light text-muted border" title="Regerar conteúdo">
+            🔄 Refazer com IA
+        </button>
+        {% endif %}
+
+        <a href="https://www.youtube.com/results?search_query=Aula+Concurso+{{ topico.id_materia_fk.nome_materia }}+{{ topico.topico }}{% if topico.nivel_3 %}+{{ topico.nivel_3 }}{% endif %}" 
+        target="_blank" 
+        class="btn btn-danger text-white d-flex align-items-center shadow-sm hover-youtube">
+            <span class="me-2">📺</span> Vídeo Aulas
+        </a>
+
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-4 d-flex align-items-stretch">
+            <div class="card text-white bg-primary mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">O que é?</div>
+                <div class="card-body">
+                    <div class="card-text">
+                        {% if topico.o_que_e_html %}
+                            {{ topico.o_que_e_html|safe }}
+                        {% else %}
+                            <em class="small text-white-50">Conteúdo pendente...</em>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-stretch">
+            <div class="card text-white bg-success mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">Para que serve?</div>
+                <div class="card-body">
+                    <div class="card-text">
+                        {% if topico.para_que_serve_html %}
+                            {{ topico.para_que_serve_html|safe }}
+                        {% else %}
+                            <em class="small text-white-50">Conteúdo pendente...</em>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-stretch">
+            <div class="card text-white bg-warning mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold text-dark">Como funciona?</div>
+                <div class="card-body">
+                    <div class="card-text text-dark">
+                        {% if topico.como_funciona_html %}
+                            {{ topico.como_funciona_html|safe }}
+                        {% else %}
+                            <em class="small text-dark-50">Conteúdo pendente...</em>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion mb-5" id="accordionResumo">
+        <div class="card border-dark shadow-sm">
+            
+            <div class="card-header bg-dark" id="headingResumo">
+                <h5 class="mb-0">
+                    <button class="btn btn-dark w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResumo" aria-expanded="false" aria-controls="collapseResumo">
+                        <span>📚 Aprofundamento Teórico (Clique para ler)</span>
+                        <span class="badge bg-secondary">▼</span>
+                    </button>
+                </h5>
+            </div>
+
+            <div id="collapseResumo" class="collapse" aria-labelledby="headingResumo" data-bs-parent="#accordionResumo">
+                <div class="card-body">
+                    <div class="card-text text-dark">
+                        {% if topico.resumo_curto_html %}
+                            {{ topico.resumo_curto_html|safe }}
+                        {% else %}
+                            <p class="text-center text-muted my-4">
+                                <em>Clique no botão "Gerar Conteúdo com IA" para criar o material.</em>
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResumo">
+                            ▲ Recolher Texto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">🎒 Material de Apoio</h4>
+    <div class="list-group mb-5">
+        {% for material in materiais %}
+            <a href="{{ material.link_conteudo }}" target="_blank" class="list-group-item list-group-item-action">
+                📺 {{ material.descricao }}
+            </a>
+        {% empty %}
+            <div class="alert alert-warning">Sem material cadastrado.</div>
+        {% endfor %}
+    </div>
+
+   <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">⏱️ Sessão Finalizada!</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          
+          <div class="modal-body">
+            <p class="text-center text-muted">Você estudou por <strong id="tempoFinalDisplay" class="text-dark fs-4"></strong>.</p>
+            <hr>
+            
+            <form id="formDesempenho">
+                <h6 class="fw-bold text-primary mb-2">📝 Desempenho</h6>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small">Qtd. Questões</label>
+                        <input type="number" id="inputQuestoes" class="form-control" placeholder="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small text-danger">Qtd. Erros</label>
+                        <input type="number" id="inputErros" class="form-control" placeholder="0">
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="fw-bold text-primary mb-2">📊 Autoavaliação</h6>
+                
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Nível de Confiança</label>
+                    <select id="inputNivel" class="form-select">
+                        <option value="Baixo" {% if status_atual.nivel_confianca == 'Baixo' %}selected{% endif %}>
+                            🔴 Baixo (Preciso reforçar)
+                        </option>
+    
+                        <option value="Médio" {% if status_atual.nivel_confianca == 'Médio' or not status_atual %}selected{% endif %}>
+                            🟡 Médio (Razoável)
+                        </option>
+    
+                        <option value="Alto" {% if status_atual.nivel_confianca == 'Alto' %}selected{% endif %}>
+                            🟢 Alto (Dominado)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small mb-1">Status do Tópico</label>
+                    <select id="inputStatus" class="form-select">
+                        <option value="Iniciado" {% if status_atual.status == 'Iniciado' or not status_atual %}selected{% endif %}>
+                            🚀 Em Andamento
+                        </option>
+    
+                        <option value="Concluído" {% if status_atual.status == 'Concluído' %}selected{% endif %}>
+                            🏁 Concluído (Finalizado)
+                        <option>
+                    </select>
+                </div>
+
+            </form>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success w-100 fw-bold" onclick="enviarDadosParaBanco()">
+                💾 Salvar Sessão e Atualizar Gráficos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        let segundos = 0;
+        let intervalo;
+        let estaRodando = false;
+        let tempoCongelado = 0; 
+
+        function formatarTempo(seg) {
+            const h = String(Math.floor(seg / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seg % 3600) / 60)).padStart(2, '0');
+            const s = String(seg % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function atualizarCronometro() {
+            segundos++;
+            document.getElementById('cronometro').innerText = formatarTempo(segundos);
+            document.title = "⏱️ " + formatarTempo(segundos) + " - Estudando...";
+        }
+
+        function iniciarCronometro() {
+            if (!estaRodando) {
+                intervalo = setInterval(atualizarCronometro, 1000);
+                estaRodando = true;
+                
+                document.getElementById('btnPlay').classList.add('d-none');
+                document.getElementById('btnPause').classList.remove('d-none');
+                
+                let container = document.getElementById('containerCronometro');
+                container.classList.remove('bg-light');
+                container.classList.add('bg-success', 'text-white');
+                
+                container.querySelector('.card-title').classList.remove('text-primary');
+                container.querySelector('.card-title').classList.add('text-white');
+                container.querySelector('.text-muted').classList.add('text-white-50');
+                container.querySelector('h1').classList.remove('text-dark');
+                container.querySelector('h1').classList.add('text-white');
+            }
+        }
+
+        function pararCronometro() {
+            clearInterval(intervalo);
+            estaRodando = false;
+            tempoCongelado = segundos;
+
+            document.getElementById('tempoFinalDisplay').innerText = formatarTempo(tempoCongelado);
+            
+            var myModal = new bootstrap.Modal(document.getElementById('modalRegistro'));
+            myModal.show();
+
+            document.getElementById('btnPlay').classList.remove('d-none');
+            document.getElementById('btnPause').classList.add('d-none');
+            
+            let container = document.getElementById('containerCronometro');
+            container.classList.remove('bg-success', 'text-white');
+            container.classList.add('bg-light');
+
+            container.querySelector('.card-title').classList.add('text-primary');
+            container.querySelector('.card-title').classList.remove('text-white');
+            container.querySelector('.text-muted').classList.remove('text-white-50');
+            container.querySelector('h1').classList.add('text-dark');
+            container.querySelector('h1').classList.remove('text-white');
+
+            document.title = "SGA - Sistema de Gestão Acadêmica";
+        }
+
+        function enviarDadosParaBanco() {
+            let questoes = document.getElementById('inputQuestoes').value;
+            let erros = document.getElementById('inputErros').value;
+            // Pegando os novos valores
+            let nivel = document.getElementById('inputNivel').value;
+            let status = document.getElementById('inputStatus').value;
+
+            if (questoes === "") questoes = null;
+            if (erros === "") erros = null;
+
+            // Feedback visual no botão
+            const btnSalvar = document.querySelector('#modalRegistro .btn-success');
+            const textoOriginal = btnSalvar.innerText;
+            btnSalvar.innerText = "Salvando...";
+            btnSalvar.disabled = true;
+
+            fetch('{% url "registrar_estudo" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'id_topico': {{ topico.id_topico }},
+                    'tempo_segundos': tempoCongelado,
+                    'qtd_questoes': questoes,
+                    'qtd_erros': erros,
+                    'nivel_confianca': nivel, // Enviando novos dados
+                    'status_estudo': status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    // Redireciona para a Home para ver os gráficos atualizados? 
+                    // Ou recarrega a página? Vamos recarregar por enquanto.
+                    alert("✅ Dados salvos com sucesso!");
+                    location.reload(); 
+                } else {
+                    alert("❌ Erro ao salvar: " + data.mensagem);
+                    btnSalvar.innerText = textoOriginal;
+                    btnSalvar.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert("❌ Erro de conexão.");
+                btnSalvar.innerText = textoOriginal;
+                btnSalvar.disabled = false;
+            });
+        }
+
+        // FUNÇÃO DA IA
+        function gerarResumoIA() {
+            const btn = document.getElementById('btnIA');
+            const textoOriginal = btn.innerHTML;
+
+            btn.innerHTML = '⏳ Escrevendo...';
+            btn.disabled = true;
+
+            fetch('{% url "gerar_conteudo" topico.id_topico %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    location.reload();
+                } else {
+                    alert("❌ Erro na IA: " + data.mensagem);
+                    btn.innerHTML = textoOriginal;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert("❌ Erro de conexão.");
+                btn.innerHTML = textoOriginal;
+                btn.disabled = false;
+            });
+        }
+
+    </script>
+
+    <style>
+    /* Efeito de transição suave para botões */
+    .transition-bg {
+        transition: all 0.3s ease;
+        }
+
+    /* Efeito hover especial para o botão do YouTube */
+    .hover-youtube:hover {
+        background-color: #cc0000 !important; /* Vermelho mais intenso */
+        transform: translateY(-2px); /* Sobe levemente */
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4) !important; /* Sombra vermelha */
+        border-color: #cc0000 !important;
+        transition: all 0.2s;
+        }
+    </style>
+
+{% endblock %}
