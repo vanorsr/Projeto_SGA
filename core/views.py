@@ -1,13 +1,14 @@
-from .models import TblMaterias, TblTopicosMaster, TblSessaoEstudo, TblStatusEstudo
+from .models import TblMaterias, TblTopicosMaster, TblSessaoEstudo, TblStatusEstudo, Questao # <--- ADICIONADO QUESTAO
 from django.db.models import Sum, Count, F, Q
 from django.core.serializers.json import DjangoJSONEncoder
 import json
-import markdown  # <--- CERTIFIQUE-SE DE TER RODADO: pip install markdown
+import markdown
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
+from .models import ResultadoQuestao 
 
 # Importando seus models
 from .models import (
@@ -15,7 +16,8 @@ from .models import (
     TblTopicosMaster, 
     TblMaterialApoio, 
     TblSessaoEstudo, 
-    TblConcursos
+    TblConcursos,
+    ResultadoQuestao # <--- ADICIONADO AQUI TAMBÉM
 )
 
 # Importando a função da IA
@@ -123,7 +125,6 @@ def registrar_estudo(request):
 def gerar_conteudo_topico(request, id_topico):
     if request.method == "POST":
         try:
-            # 1. Busca usando o nome EXATO do campo definido no seu Model
             topico = get_object_or_404(TblTopicosMaster, id_topico=id_topico)
             
             contexto_ia = f"Matéria: {topico.id_materia_fk} > "
@@ -134,17 +135,35 @@ def gerar_conteudo_topico(request, id_topico):
             conteudo = gerar_conteudo_ia(contexto_ia)
             
             if conteudo:
-                # 2. Atribuição dos campos (os nomes batem com o seu Model)
+                # 1. Salva a Tríade e o Aprofundamento (O que você já tinha)
                 topico.o_que_e = conteudo.get('o_que_e')
                 topico.para_que_serve = conteudo.get('para_que_serve')
                 topico.como_funciona = conteudo.get('como_funciona')
                 topico.resumo_curto = conteudo.get('resumo_curto')
-                
-                # 3. O Pulo do Gato: Forçar o salvamento
                 topico.save()
+
+                # 2. NOVO: Salva as Questões do Simulado 🚀
+                # Primeiro, removemos questões antigas para não acumular lixo
+                Questao.objects.filter(topico=topico).delete()
+
+                # Pegamos a lista de questões do JSON da IA
+                lista_questoes = conteudo.get('questoes', [])
                 
-                print(f"✅ Tópico {id_topico} salvo com sucesso no banco!")
-                return JsonResponse({"status": "sucesso", "mensagem": "Conteúdo gerado!"})
+                for q in lista_questoes:
+                    Questao.objects.create(
+                        topico=topico,
+                        enunciado=q.get('enunciado'),
+                        opcao_a=q.get('a'),
+                        opcao_b=q.get('b'),
+                        opcao_c=q.get('c'),
+                        opcao_d=q.get('d'),
+                        opcao_e=q.get('e'),
+                        alternativa_correta=q.get('correta'),
+                        justificativa=q.get('justificativa')
+                    )
+                
+                print(f"✅ Tópico {id_topico} e Simulado salvos com sucesso!")
+                return JsonResponse({"status": "sucesso", "mensagem": "Conteúdo e questões gerados!"})
             else:
                 return JsonResponse({"status": "erro", "mensagem": "IA retornou vazio."}, status=500)
 
@@ -171,27 +190,20 @@ def home(request):
             data_horas.append(total_horas)
 
     # --- 2. GRÁFICO: STATUS DO ANDAMENTO (CORRIGIDO) ---
-    # Agora agrupamos pelo TEXTO do status, e não apenas contagem de linhas
     status_query = TblStatusEstudo.objects.values('status').annotate(qtd=Count('id_status'))
     
     labels_status = []
     data_status = []
-    
-    # Variável para o Card de Resumo (Vai contar só o que REALMENTE começou)
     card_topicos_iniciados = 0 
 
     for item in status_query:
-        # Pega o texto do banco (ex: "Iniciado", "Não Iniciado", "Concluído")
         label = item['status'] 
-        if not label: label = "Não Classificado" # Proteção contra nulos
+        if not label: label = "Não Classificado"
         
         qtd = item['qtd']
         labels_status.append(label)
         data_status.append(qtd)
         
-        # LÓGICA DO CARD:
-        # Se o status NÃO FOR "Não Iniciado", consideramos como progresso.
-        # Dica: Verifique se no seu banco está escrito exatamente "Não Iniciado" (com acento e espaços)
         if label.strip().lower() != "não iniciado": 
              card_topicos_iniciados += qtd
 
@@ -205,7 +217,21 @@ def home(request):
         labels_conhecimento.append(label)
         data_conhecimento.append(item['qtd'])
 
-    # --- 4. TOTAIS GERAIS (Cards) ---
+    # --- 4. NOVAS MÉTRICAS: DESEMPENHO EM QUESTÕES (PASSO 1) ---
+    # Buscamos os dados da nova tabela ResultadoQuestao
+    total_respostas = ResultadoQuestao.objects.count()
+    total_acertos = ResultadoQuestao.objects.filter(foi_acerto=True).count()
+    total_erros = ResultadoQuestao.objects.filter(foi_acerto=False).count()
+
+    precisao_geral = 0
+    if total_respostas > 0:
+        precisao_geral = round((total_acertos / total_respostas) * 100, 1)
+
+    # Preparação para o gráfico de Rosca (Donut)
+    chart_simulado_labels = ['Acertos', 'Erros']
+    chart_simulado_data = [total_acertos, total_erros]
+
+    # --- 5. TOTAIS GERAIS (Cards) ---
     total_topicos = TblTopicosMaster.objects.count()
     
     total_tempo_geral = TblSessaoEstudo.objects.aggregate(
@@ -217,25 +243,52 @@ def home(request):
         seg = total_tempo_geral.total_seconds()
         horas_gerais = f"{int(seg//3600)}h {int((seg%3600)//60)}m"
     
-    # Cálculo da porcentagem real
     percentual_concluido = 0
     if total_topicos > 0:
         percentual_concluido = round((card_topicos_iniciados / total_topicos) * 100, 1)
 
+    # --- 6. CONTEXTO PARA O TEMPLATE ---
     contexto = {
         'horas_gerais': horas_gerais,
-        'topicos_iniciados': card_topicos_iniciados, # Agora usa a contagem filtrada
+        'topicos_iniciados': card_topicos_iniciados,
         'total_topicos': total_topicos,
         'percentual_concluido': percentual_concluido,
         
+        # Dados do Simulado (Novos)
+        'total_questoes': total_respostas,
+        'precisao_geral': precisao_geral,
+        'chart_simulado_labels': json.dumps(chart_simulado_labels),
+        'chart_simulado_data': json.dumps(chart_simulado_data),
+        
+        # Gráficos anteriores
         'chart_horas_labels': json.dumps(labels_horas, cls=DjangoJSONEncoder),
         'chart_horas_data': json.dumps(data_horas, cls=DjangoJSONEncoder),
-        
         'chart_status_labels': json.dumps(labels_status, cls=DjangoJSONEncoder),
         'chart_status_data': json.dumps(data_status, cls=DjangoJSONEncoder),
-        
         'chart_conhecimento_labels': json.dumps(labels_conhecimento, cls=DjangoJSONEncoder),
         'chart_conhecimento_data': json.dumps(data_conhecimento, cls=DjangoJSONEncoder),
     }
     
     return render(request, 'core/home.html', contexto)
+
+@csrf_exempt
+def salvar_resultado_questao(request):
+    if request.method == 'POST':
+        try:
+            dados = json.loads(request.body)
+            
+            # Print para depuração: veja se esses dados aparecem no seu terminal
+            print(f"DEBUG: Recebido questao_id={dados.get('questao_id')}, topico_id={dados.get('topico_id')}, acertou={dados.get('acertou')}")
+
+            # Criando o registro no banco
+            ResultadoQuestao.objects.create(
+                questao_id=int(dados.get('questao_id')),
+                topico_id=int(dados.get('topico_id')),
+                foi_acerto=bool(dados.get('acertou'))
+            )
+            return JsonResponse({'status': 'sucesso'})
+        except Exception as e:
+            # Isso vai imprimir o erro exato no seu terminal do VS Code/PowerShell
+            print(f"❌ ERRO AO SALVAR RESULTADO: {str(e)}")
+            return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
+    return JsonResponse({'status': 'metodo_invalido'}, status=400)

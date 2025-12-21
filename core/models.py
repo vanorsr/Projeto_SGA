@@ -157,21 +157,56 @@ class TblSessaoEstudo(models.Model):
 
 class TblHistoricoEstudo(models.Model):
     id_historico = models.AutoField(primary_key=True)
-    
-    # Relacionamento: O histórico pertence a um Tópico específico
     id_topico_fk = models.ForeignKey(TblTopicosMaster, on_delete=models.CASCADE, db_column='id_topico_fk')
-    
-    # Quando o estudo aconteceu
     data_estudo = models.DateTimeField(auto_now_add=True)
-    
-    # Quanto tempo durou (em segundos, para facilitar cálculos depois)
     tempo_segundos = models.IntegerField()
     
     class Meta:
-        db_table = 'tbl_Sessao_Estudo'
-        managed = False # O Django vai criar e gerenciar essa tabela
+        db_table = 'tbl_Sessao_Estudo' # Verifique se esta tabela no SQL Server é a mesma de TblSessaoEstudo
+        managed = False
         verbose_name = 'Histórico de Estudo'
         verbose_name_plural = 'Histórico de Estudos'
 
     def __str__(self):
         return f"{self.data_estudo} - {self.id_topico_fk.topico} ({self.tempo_segundos}s)"
+
+# FORA da classe anterior, na margem esquerda:
+class Questao(models.Model):
+    # Usamos 'TblTopicosMaster' pois é o nome da sua tabela de tópicos
+    topico = models.ForeignKey('TblTopicosMaster', on_delete=models.CASCADE, related_name='questoes')
+    enunciado = models.TextField()
+    opcao_a = models.TextField()
+    opcao_b = models.TextField()
+    opcao_c = models.TextField()
+    opcao_d = models.TextField()
+    opcao_e = models.TextField()
+    alternativa_correta = models.CharField(max_length=1) 
+    justificativa = models.TextField()
+
+    class Meta:
+        managed = True # O Django vai criar esta tabela para você
+        verbose_name = 'Questão'
+        verbose_name_plural = 'Questões'
+
+    def __str__(self):
+        # Usamos .topico pois é o campo nome no seu TblTopicosMaster
+        return f"Questão {self.id} - {self.topico.topico}"
+    
+class ResultadoQuestao(models.Model):
+    # Relacionamentos
+    questao = models.ForeignKey('Questao', on_delete=models.CASCADE, related_name='resultados')
+    topico = models.ForeignKey('TblTopicosMaster', on_delete=models.CASCADE, related_name='resultados_questoes')
+    
+    # Dados da performance
+    foi_acerto = models.BooleanField() # True para acerto, False para erro
+    data_resposta = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'tbl_Resultados_Questoes' # Nome da tabela no SQL Server
+        managed = True
+        verbose_name = 'Resultado de Questão'
+        verbose_name_plural = 'Resultados de Questões'
+
+    def __str__(self):
+        status = "Acerto" if self.foi_acerto else "Erro"
+        return f"{status} - {self.topico.topico} ({self.data_resposta.strftime('%d/%m/%Y')})"

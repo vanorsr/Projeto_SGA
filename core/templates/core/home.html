@@ -37,7 +37,8 @@
                                 {{ topicos_iniciados }} <span class="text-muted small">de {{ total_topicos }}</span>
                             </div>
                         </div>
-                        <div class="col-auto"><h1 class="text-gray-300">🚀</h1></div> </div>
+                        <div class="col-auto"><h1 class="text-gray-300">🚀</h1></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -67,7 +68,6 @@
     </div>
 
     <div class="row">
-        
         <div class="col-12 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -81,32 +81,51 @@
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 text-warning">
                     <h6 class="m-0 font-weight-bold text-warning">Status do Andamento (Edital)</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4">
+                    <div class="chart-pie">
                         <canvas id="chartStatus"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 text-info">
                     <h6 class="m-0 font-weight-bold text-info">Nível de Conhecimento (Confiança)</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4">
+                    <div class="chart-pie">
                         <canvas id="chartConhecimento"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Desempenho Simulados</h6>
+                    <span class="badge bg-primary text-white">{{ total_questoes }} Questões</span>
+                </div>
+                <div class="card-body text-center">
+                    <div class="chart-pie">
+                        <canvas id="chartSimulado"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="fw-bold {% if precisao_geral >= 70 %}text-success{% else %}text-danger{% endif %}">
+                            {{ precisao_geral }}%
+                        </h3>
+                        <p class="text-muted small mb-0">Taxa de Acerto Geral</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -114,40 +133,64 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
+
+    // Configuração Única para todos os rótulos de roscas (Donuts)
+    const estiloRotulosGlobal = {
+        color: '#ffffff',      // Branco para contraste máximo
+        font: {
+            family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+            weight: 'bold',
+            size: 16           // Aumentamos um pouco para melhorar a legibilidade
+        },
+        formatter: (value) => {
+            return value > 0 ? value : null; // Oculta zeros para não poluir
+        },
+        // Sombra para garantir leitura mesmo em cores claras
+        textShadowColor: 'rgba(0, 0, 0, 0.5)',
+        textShadowBlur: 3
+    };
+
     Chart.register(ChartDataLabels);
 
-    // --- FUNÇÃO INTELIGENTE DE CORES ---
-    // Define a cor baseada no NOME do dado (Label)
+    const configDatalabels = {
+        color: '#fff', // Cor branca para contraste
+        font: {
+            weight: 'bold',
+            size: 14
+        },
+        formatter: (value, ctx) => {
+            // Só mostra o número se ele for maior que zero
+            return value > 0 ? value : null;
+        },
+        // Garante que o número fique centralizado na fatia
+        anchor: 'center',
+        align: 'center',
+        offset: 0
+};
+
     function obterCorPorLabel(label) {
         const l = label.toLowerCase().trim();
-        
-        // Paleta Semântica (Traffic Light)
-        if (l === 'baixo') return '#e74a3b';      // Vermelho
-        if (l === 'médio' || l === 'medio') return '#f6c23e'; // Amarelo
-        if (l === 'alto') return '#1cc88a';       // Verde
-        
-        // Paleta de Status (Access Style)
-        if (l === 'iniciado') return '#4e73df';       // Azul Forte
-        if (l === 'não iniciado') return '#fd7e14';   // Laranja Vibrante
-        if (l === 'concluído') return '#1cc88a';      // Verde
-        
-        return '#858796'; // Cinza escuro padrão para outros casos
+        if (l === 'baixo') return '#e74a3b';
+        if (l === 'médio' || l === 'medio') return '#f6c23e';
+        if (l === 'alto') return '#1cc88a';
+        if (l === 'iniciado') return '#4e73df';
+        if (l === 'não iniciado') return '#fd7e14';
+        if (l === 'concluído') return '#1cc88a';
+        return '#858796';
     }
 
-    // Função auxiliar para aplicar as cores em uma lista de labels
     function gerarPaleta(labels) {
         return labels.map(label => obterCorPorLabel(label));
     }
 
-    // 1. GRÁFICO DE BARRAS (HORAS)
+    // 1. GRÁFICO DE BARRAS
     new Chart(document.getElementById("myBarChart"), {
       type: 'bar',
       data: {
         labels: {{ chart_horas_labels|safe }},
         datasets: [{
           label: "Horas",
-          backgroundColor: "#4e73df", // Azul padrão do tema
-          hoverBackgroundColor: "#2e59d9",
+          backgroundColor: "#4e73df",
           data: {{ chart_horas_data|safe }},
           datalabels: { anchor: 'end', align: 'end', color: '#444', font: { weight: 'bold' }, formatter: v => v + ' h' }
         }],
@@ -155,66 +198,107 @@
       options: {
         indexAxis: 'y',
         maintainAspectRatio: false,
-        layout: { padding: { right: 30 } },
-        scales: { x: { grid: { display: false } }, y: { grid: { borderDash: [2] } } },
         plugins: { legend: { display: false }, datalabels: { display: true } }
       }
     });
 
-    // 2. GRÁFICO DE ROSCA (STATUS)
-    // Cores: Azul (Iniciado) vs Laranja (Não Iniciado)
+    // 2. GRÁFICO DE STATUS (PADRONIZADO)
     const labelsStatus = {{ chart_status_labels|safe }};
-    
+
     new Chart(document.getElementById("chartStatus"), {
-      type: 'doughnut',
-      data: {
-        labels: labelsStatus,
-        datasets: [{
-          data: {{ chart_status_data|safe }},
-          backgroundColor: gerarPaleta(labelsStatus), // Usa a função inteligente
-          hoverBorderColor: "rgba(234, 236, 244, 1)",
-          datalabels: { color: '#fff', font: { weight: 'bold' }, font: {size: 14} }
-        }],
-      },
-      options: { 
-        maintainAspectRatio: false, 
-        cutout: '60%', 
-        plugins: { 
-            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } 
-        } 
-      }
+        type: 'doughnut',
+        data: {
+            labels: labelsStatus,
+            datasets: [{
+                data: {{ chart_status_data|safe }},
+                backgroundColor: gerarPaleta(labelsStatus),
+                borderWidth: 2,           // Adicionado para padronizar com o de simulados
+                borderColor: '#ffffff'    // Adicionado para padronizar com o de simulados
+            }],
+        },
+        options: { 
+            maintainAspectRatio: false, 
+            cutout: '60%', // Ajustado para 60% para que a rosca tenha a mesma espessura das outras
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { usePointStyle: true, padding: 20 } 
+                },
+                // AQUI ESTÁ A MÁGICA: A variável global que ajusta a fonte de uma vez só
+                datalabels: estiloRotulosGlobal 
+            } 
+        }
     });
 
-    // 3. GRÁFICO DE ROSCA (NÍVEL DE CONHECIMENTO)
-    // Cores: Vermelho (Baixo) -> Amarelo (Médio) -> Verde (Alto)
+    // 3. GRÁFICO DE CONHECIMENTO (PADRONIZADO)
     const labelsConhecimento = {{ chart_conhecimento_labels|safe }};
 
     new Chart(document.getElementById("chartConhecimento"), {
-      type: 'doughnut',
-      data: {
-        labels: labelsConhecimento,
-        datasets: [{
-          data: {{ chart_conhecimento_data|safe }},
-          backgroundColor: gerarPaleta(labelsConhecimento), // Usa a função inteligente
-          hoverBorderColor: "rgba(234, 236, 244, 1)",
-          datalabels: { color: '#fff', font: { weight: 'bold' } }
-        }],
-      },
-      options: { 
-        maintainAspectRatio: false, 
-        cutout: '60%', 
-        plugins: { 
-            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } 
-        } 
-      }
+        type: 'doughnut',
+        data: {
+            labels: labelsConhecimento,
+            datasets: [{
+                data: {{ chart_conhecimento_data|safe }},
+                backgroundColor: gerarPaleta(labelsConhecimento),
+                borderWidth: 2,           // Padronização de borda
+                borderColor: '#ffffff'    // Padronização de borda
+            }],
+        },
+        options: { 
+            maintainAspectRatio: false, 
+            cutout: '60%', // Ajustado para manter a mesma espessura dos demais
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { usePointStyle: true, padding: 20 } 
+                },
+                // Aplicando a variável de estilo centralizada
+                datalabels: estiloRotulosGlobal 
+            } 
+        }
     });
+
+    // 4. GRÁFICO DE SIMULADO (PADRONIZADO COM VARIÁVEL GLOBAL)
+    new Chart(document.getElementById("chartSimulado"), {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_simulado_labels|safe }},
+            datasets: [{
+                data: {{ chart_simulado_data|safe }},
+                backgroundColor: ['#1cc88a', '#e74a3b'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            cutout: '60%', // Padronizado com Status e Conhecimento
+            plugins: {
+                legend: { 
+                    position: 'bottom', 
+                    labels: { usePointStyle: true, padding: 20 } 
+                },
+                // Aplicando a variável de estilo centralizada
+                datalabels: estiloRotulosGlobal 
+            }
+        }
+    });
+    
 </script>
 
 <style>
+    /* Altura fixa para os containers de gráfico para garantir alinhamento horizontal */
     .chart-bar { position: relative; height: 20rem; width: 100%; }
-    .chart-pie { position: relative; height: 18rem; width: 100%; }
+    .chart-pie { position: relative; height: 16rem; width: 100%; } /* Ajustado para 16rem */
+    
+    /* Cores das bordas laterais (opcional, para manter o padrão dos cards superiores) */
     .border-left-primary { border-left: .25rem solid #4e73df!important; }
     .border-left-success { border-left: .25rem solid #1cc88a!important; }
     .border-left-info { border-left: .25rem solid #36b9cc!important; }
+
+    /* Força os cards da mesma linha a terem a mesma altura */
+    .row { display: flex; flex-wrap: wrap; }
+    .row > [class*='col-'] { display: flex; flex-direction: column; }
+    .row > [class*='col-'] .card { flex: 1 0 auto; }
 </style>
 {% endblock %}

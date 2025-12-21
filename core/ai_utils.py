@@ -11,7 +11,6 @@ def sanitizar_json(texto_cru):
         # 1. Limpeza de blocos de código Markdown (as crases ```json ... ```)
         texto = texto_cru.strip()
         if texto.startswith("```"):
-            # Remove a linha inicial (ex: ```json) e a linha final (```)
             linhas = texto.splitlines()
             if linhas[0].startswith("```"):
                 linhas = linhas[1:]
@@ -20,17 +19,18 @@ def sanitizar_json(texto_cru):
             texto = "\n".join(linhas).strip()
         
         # 2. Tratamento de barras invertidas para não quebrar o JSON
-        # Isso protege contra caracteres especiais que a IA possa enviar
         texto = re.sub(r'\\(?![\\"/bfnrtu])', r'\\\\', texto)
         
         return texto
     except Exception as e:
+        logger.error(f"Erro na sanitização: {e}")
         return texto_cru
 
 def gerar_conteudo_ia(texto_contexto):
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
         
+        # PROMPT CONSOLIDADO: Tríade + Aprofundamento + Módulo de Questões
         prompt = f"""
         Atue como um professor sênior de cursinho para concursos (foco em concursos de nível superior para as áreas de Analista Administrativo ou similares).
         Contexto do assunto: "{texto_contexto}".
@@ -51,40 +51,42 @@ def gerar_conteudo_ia(texto_contexto):
              - VERDE (#198754): Requisitos e Deveres.
            - Crie siglas mnemônicas reais para listas, usando <blockquote>.
            - Mínimo de 5 parágrafos densos.
-        
-        Responda APENAS o objeto JSON:
-        {{
-            "o_que_e": "...",
-            "para_que_serve": "...",
-            "como_funciona": "...",
-            "resumo_curto": "..."
-        }}
-        
-        ESTRUTURA DO JSON:
-        1. **o_que_e:** Definição técnica e concisa.
-        2. **para_que_serve:** Aplicação prática em provas.
-        3. **como_funciona:** Divisões ou funcionamento do tema.
-        4. **resumo_curto:** APROFUNDAMENTO TEÓRICO denso (mínimo 5 parágrafos). 
-           - Sempre que possível, inclua um mnemônico usando a tag <blockquote>.
            - Use o prefixo "⚠️ **PEGADINHA:**" para alertas de banca.
-        
-        Responda APENAS o objeto JSON:
+
+        3. **GERAÇÃO DE QUESTÕES (SIMULADO DE ELITE):**
+           - Gere 3 questões de múltipla escolha (A a E) de nível Difícil.
+           - **ESTILO:** Mimetize o estilo de cobrança da banca FGV ou FCC para Analista.
+           - **FONTE:** As questões devem ser baseadas EXCLUSIVAMENTE nos detalhes, prazos e exceções descritos no seu campo 'resumo_curto'.
+           - No campo 'justificativa', explique o erro das alternativas incorretas e confirme a correta.
+           - **REGRA CRÍTICA DE FORMATAÇÃO:** Use APENAS texto puro (plain text) nos campos 'enunciado', 'a', 'b', 'c', 'd', 'e' e 'justificativa'.
+           - É TERMINANTEMENTE PROIBIDO o uso de tags HTML (como <span>, <br>, <b>) ou cores dentro do objeto de questões.
+           - As cores devem aparecer APENAS no campo 'resumo_curto'.
+
+        Responda ESTRITAMENTE no formato JSON abaixo:
         {{
             "o_que_e": "...",
             "para_que_serve": "...",
             "como_funciona": "...",
-            "resumo_curto": "..."
+            "resumo_curto": "...",
+            "questoes": [
+                {{
+                    "enunciado": "...",
+                    "a": "...", "b": "...", "c": "...", "d": "...", "e": "...",
+                    "correta": "A",
+                    "justificativa": "..."
+                }}
+            ]
         }}
-
         """
+
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash", 
             contents=prompt
         )
 
         if response and response.text:
             print("\n--- RESPOSTA BRUTA DA IA ---")
-            print(response.text) # <--- ISSO VAI NOS MOSTRAR O TEXTO NO TERMINAL
+            print(response.text)
             print("----------------------------\n")
             
             texto_limpo = sanitizar_json(response.text)
@@ -92,5 +94,5 @@ def gerar_conteudo_ia(texto_contexto):
         return None
 
     except Exception as e:
-        print(f"❌ Erro ao processar JSON: {e}")
+        print(f"❌ Erro ao processar IA ou JSON: {e}")
         return None

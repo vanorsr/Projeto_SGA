@@ -137,6 +137,77 @@
         </div>
     </div>
 
+
+<hr class="my-5">
+
+<div class="accordion mb-5 shadow-sm" id="accordionSimulado">
+    <div class="accordion-item border-primary">
+        <h2 class="accordion-header" id="headingQuestoes">
+            <button class="accordion-button collapsed bg-primary text-white" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapseQuestoes" 
+                    aria-expanded="false" aria-controls="collapseQuestoes">
+                <i class="fas fa-tasks me-2"></i> 
+                <strong>SIMULADO DE ELITE: Desafie seu conhecimento agora</strong>
+            </button>
+        </h2>
+        
+        <div id="collapseQuestoes" class="accordion-collapse collapse" 
+             aria-labelledby="headingQuestoes" data-bs-parent="#accordionSimulado">
+            <div class="accordion-body bg-light">
+                
+                <div class="d-flex justify-content-center gap-4 mb-4">
+                    <div class="badge bg-success p-2 fs-6">Acertos: <span id="contador-acertos">0</span></div>
+                    <div class="badge bg-danger p-2 fs-6">Erros: <span id="contador-erros">0</span></div>
+                </div>
+
+                {% for questao in topico.questoes.all %}
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="text-primary mb-3">Questão {{ forloop.counter }}</h5>
+                        <p class="card-text fw-bold fs-5 text-dark">{{ questao.enunciado }}</p>
+                        
+                        <div class="list-group gap-2">
+                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
+                                    onclick="verificarResposta(this, 'A', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                <strong>A)</strong> {{ questao.opcao_a }}
+                            </button>
+
+                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
+                                    onclick="verificarResposta(this, 'B', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                <strong>B)</strong> {{ questao.opcao_b }}
+                            </button>
+
+                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
+                                    onclick="verificarResposta(this, 'C', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                <strong>C)</strong> {{ questao.opcao_c }}
+                            </button>
+
+                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
+                                    onclick="verificarResposta(this, 'D', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                <strong>D)</strong> {{ questao.opcao_d }}
+                            </button>
+
+                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
+                                    onclick="verificarResposta(this, 'E', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                <strong>E)</strong> {{ questao.opcao_e }}
+                            </button>
+                        </div>
+                        <div id="justificativa-{{ questao.id }}" class="mt-3 p-3 bg-white border-start border-4 border-success rounded d-none shadow-sm">
+                            <h6 class="fw-bold text-success"><i class="fas fa-chalkboard-teacher"></i> Justificativa Técnica:</h6>
+                            <p class="mb-0 text-muted italic">{{ questao.justificativa }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center py-4">Nenhuma questão gerada. Clique em "Refazer com IA" para criar o simulado.</p>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
     <h4 class="mb-3">🎒 Material de Apoio</h4>
     <div class="list-group mb-5">
         {% for material in materiais %}
@@ -368,6 +439,60 @@
             });
         }
 
+        // --- COLE ESTE BLOCO NOVO AQUI DENTRO DO <script> ---
+    let acertos = 0;
+    let erros = 0;
+
+    function verificarResposta(botao, escolha, correta, idJustificativa, questaoId, topicoId) {
+        const grupo = botao.closest('.list-group');
+        const botoes = grupo.querySelectorAll('.btn-alternativa');
+        
+        if (grupo.classList.contains('respondida')) return;
+        grupo.classList.add('respondida');
+
+        botoes.forEach(b => b.classList.add('disabled'));
+
+        const acertou = (escolha === correta);
+
+        if (acertou) {
+            botao.classList.add('list-group-item-success', 'fw-bold');
+            botao.innerHTML += ' ✅ (Correto!)';
+            acertos++;
+            document.getElementById('contador-acertos').innerText = acertos;
+        } else {
+            botao.classList.add('list-group-item-danger');
+            botao.innerHTML += ' ❌ (Incorreto)';
+            erros++;
+            document.getElementById('contador-erros').innerText = erros;
+            
+            botoes.forEach(b => {
+                if (b.innerText.trim().startsWith(correta + ')')) {
+                    b.classList.add('list-group-item-success', 'opacity-75');
+                }
+            });
+        }
+
+        // --- PARTE NOVA: ENVIAR PARA O BANCO DE DADOS (AJAX) ---
+        fetch('/salvar-resultado-questao/', { // Verifique se esta URL está igual na sua urls.py
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'questao_id': questaoId,
+                'topico_id': topicoId,
+                'acertou': acertou
+            })
+        })
+        .then(response => response.json())
+        .then(data => console.log('Resultado salvo no banco:', data))
+        .catch(error => console.error('Erro ao salvar:', error));
+        // -------------------------------------------------------
+
+        document.getElementById(idJustificativa).classList.remove('d-none');
+    }
+        
     </script>
 
     <style>
