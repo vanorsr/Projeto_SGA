@@ -3,6 +3,7 @@ from django.db.models import Sum, Count, F, Q
 from django.core.serializers.json import DjangoJSONEncoder
 import json
 import markdown
+import re
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
@@ -150,16 +151,18 @@ def gerar_conteudo_topico(request, id_topico):
                 lista_questoes = conteudo.get('questoes', [])
                 
                 for q in lista_questoes:
+                    # REDE DE PROTEÇÃO: Se a IA não enviar a chave, usamos um texto padrão 
+                    # para evitar o erro de NULL no SQL Server.
                     Questao.objects.create(
                         topico=topico,
-                        enunciado=q.get('enunciado'),
-                        opcao_a=q.get('a'),
-                        opcao_b=q.get('b'),
-                        opcao_c=q.get('c'),
-                        opcao_d=q.get('d'),
-                        opcao_e=q.get('e'),
-                        alternativa_correta=q.get('correta'),
-                        justificativa=q.get('justificativa')
+                        enunciado=q.get('enunciado') or "Enunciado não gerado pela IA",
+                        opcao_a=q.get('a') or q.get('opcao_a') or "Opção A não disponível",
+                        opcao_b=q.get('b') or q.get('opcao_b') or "Opção B não disponível",
+                        opcao_c=q.get('c') or q.get('opcao_c') or "Opção C não disponível",
+                        opcao_d=q.get('d') or q.get('opcao_d') or "Opção D não disponível",
+                        opcao_e=q.get('e') or q.get('opcao_e') or "Opção E não disponível",
+                        alternativa_correta=q.get('correta') or q.get('alternativa_correta') or "A",
+                        justificativa=q.get('justificativa') or "Sem justificativa disponível."
                     )
                 
                 print(f"✅ Tópico {id_topico} e Simulado salvos com sucesso!")
@@ -168,8 +171,8 @@ def gerar_conteudo_topico(request, id_topico):
                 return JsonResponse({"status": "erro", "mensagem": "IA retornou vazio."}, status=500)
 
         except Exception as e:
-            print(f"❌ Erro ao salvar: {e}")
-            return JsonResponse({"status": "erro", "mensagem": str(e)}, status=500)
+            print(f"❌ Erro ao processar IA ou JSON: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
             
     return JsonResponse({"status": "erro", "mensagem": "Método inválido"}, status=400)
 
