@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: sga
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn setup.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      # As variáveis abaixo devem ser configuradas manualmente no painel
+      # do Render após o primeiro deploy:
+      # - DATABASE_URL (connection string do Supabase)
+      # - ANTHROPIC_API_KEY
+      # - GEMINI_API_KEY (opcional)
