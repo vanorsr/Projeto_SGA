@@ -10,6 +10,8 @@ from core.views import (
     registrar_estudo,
     gerar_conteudo_topico,
     salvar_resultado_questao,
+    adicionar_material,
+    remover_material,
 )
 
 urlpatterns = [
@@ -29,6 +31,9 @@ urlpatterns = [
     # Endpoints de API
     path('api/registrar_estudo/', registrar_estudo, name='registrar_estudo'),
     path('api/gerar_conteudo/<int:id_topico>/', gerar_conteudo_topico, name='gerar_conteudo'),
+    # Material de Apoio
+    path('api/material/adicionar/<int:id_topico>/', adicionar_material, name='adicionar_material'),
+    path('api/material/remover/<int:id_material>/', remover_material, name='remover_material'),
 
     # Rota para salvar os acertos/erros das questões do simulado
     path('salvar-resultado-questao/', salvar_resultado_questao, name='salvar_resultado_questao'),

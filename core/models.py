@@ -119,17 +119,33 @@ class TblEditalLink(models.Model):
 
 
 class TblMaterialApoio(models.Model):
+    TIPO_CHOICES = [
+        ('video', '🎥 Vídeo'),
+        ('pdf', '📄 PDF'),
+        ('artigo', '📰 Artigo'),
+        ('outro', '🔗 Outro'),
+    ]
     id_material = models.AutoField(db_column='ID_Material', primary_key=True)
-    id_topico_fk = models.ForeignKey(TblTopicosMaster, models.DO_NOTHING, db_column='ID_Topico_FK', blank=True, null=True)
-    descricao = models.CharField(db_column='Descricao', max_length=255, blank=True, null=True)
-    link_conteudo = models.TextField(db_column='link_Conteudo', blank=True, null=True)
-    tipo_material = models.CharField(db_column='Tipo_Material', max_length=255, blank=True, null=True)
+    id_topico_fk = models.ForeignKey(TblTopicosMaster, models.CASCADE, db_column='ID_Topico_FK')
+    descricao = models.CharField(db_column='Descricao', max_length=255)
+    link_conteudo = models.TextField(db_column='link_Conteudo')
+    tipo_material = models.CharField(
+        db_column='Tipo_Material',
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='video',
+    
+    )
     duracao_minutos = models.IntegerField(db_column='Duracao_Minutos', blank=True, null=True)
     ssma_timestamp = models.TextField(db_column='SSMA_TimeStamp', blank=True, null=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    data_criacao = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     class Meta:
-        managed = True
         db_table = 'tbl_Material_Apoio'
+        verbose_name = 'Material de Apoio'
+        verbose_name_plural = 'Materiais de Apoio'
+        ordering = ['-data_criacao']
 
 class TblSessaoEstudo(models.Model):
     id_sessao = models.AutoField(db_column='ID_Sessao', primary_key=True)

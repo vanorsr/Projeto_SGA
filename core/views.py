@@ -10,7 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
-from .models import ResultadoQuestao 
+from .models import ResultadoQuestao
+from django.views.decorators.http import require_POST
 
 # Importando seus models
 from .models import (
@@ -45,28 +46,42 @@ def lista_topicos(request, id):
 def detalhe_topico(request, id):
     # Busca o tópico pelo ID
     topico = get_object_or_404(TblTopicosMaster, id_topico=id)
-    
+
     # Busca o STATUS ATUAL desse tópico (se existir)
     status_atual = TblStatusEstudo.objects.filter(id_topico_fk=topico).first()
 
-    # Lógica dos botões Anterior/Próximo (Mantida igual)
+    # Materiais de apoio desse tópico (com info de "é dono?" pro template)
+    materiais_raw = TblMaterialApoio.objects.filter(id_topico_fk=topico).order_by('-data_criacao')
+    materiais = []
+    for m in materiais_raw:
+        materiais.append({
+            'id': m.id_material,
+            'titulo': m.descricao,
+            'link': m.link_conteudo,
+            'tipo': m.tipo_material or 'outro',
+            'tipo_label': dict(TblMaterialApoio.TIPO_CHOICES).get(m.tipo_material or 'outro', '🔗 Outro'),
+            'e_dono': m.usuario_id == request.user.id if m.usuario_id else False,
+        })
+
+    # Lógica dos botões Anterior/Próximo
     topico_anterior = TblTopicosMaster.objects.filter(
-        id_materia_fk=topico.id_materia_fk, 
+        id_materia_fk=topico.id_materia_fk,
         id_topico__lt=topico.id_topico
     ).order_by('-id_topico').first()
-    
+
     proximo_topico = TblTopicosMaster.objects.filter(
-        id_materia_fk=topico.id_materia_fk, 
+        id_materia_fk=topico.id_materia_fk,
         id_topico__gt=topico.id_topico
     ).order_by('id_topico').first()
 
     contexto = {
         'topico': topico,
-        'status_atual': status_atual,  # <--- AQUI ESTÁ A CHAVE DO SUCESSO! 🗝️
+        'status_atual': status_atual,
+        'materiais': materiais,
         'anterior': topico_anterior,
         'proximo': proximo_topico,
     }
-    
+
     return render(request, 'core/detalhe_topico.html', contexto)
 
 @login_required
@@ -319,3 +334,72 @@ def salvar_resultado_questao(request):
             print(f"❌ ERRO AO SALVAR RESULTADO: {str(e)}")
             return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=500)
     return JsonResponse({'status': 'metodo_invalido'}, status=400)
+
+@login_required
+@require_POST
+def adicionar_material(request, id_topico):
+    """Adiciona um material de apoio ao tópico, vinculado ao usuário logado."""
+    try:
+        import json
+        topico = get_object_or_404(TblTopicosMaster, id_topico=id_topico)
+        dados = json.loads(request.body)
+
+        titulo = (dados.get('titulo') or '').strip()
+        link = (dados.get('link') or '').strip()
+        tipo = dados.get('tipo') or 'video'
+
+        if not titulo or not link:
+            return JsonResponse(
+                {'status': 'erro', 'mensagem': 'Título e link são obrigatórios.'},
+                status=400,
+            )
+
+        if tipo not in ['video', 'pdf', 'artigo', 'outro']:
+            tipo = 'outro'
+
+        material = TblMaterialApoio.objects.create(
+            id_topico_fk=topico,
+            descricao=titulo,
+            link_conteudo=link,
+            tipo_material=tipo,
+            usuario=request.user,
+        )
+
+        return JsonResponse({
+            'status': 'sucesso',
+            'material': {
+                'id': material.id_material,
+                'titulo': material.descricao,
+                'link': material.link_conteudo,
+                'tipo': material.tipo_material,
+                'tipo_label': dict(TblMaterialApoio.TIPO_CHOICES).get(material.tipo_material, '🔗 Outro'),
+                'e_dono': True,
+            }
+        })
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'erro', 'mensagem': f'Erro ao adicionar: {str(e)}'},
+            status=500,
+        )
+
+
+@login_required
+@require_POST
+def remover_material(request, id_material):
+    """Remove material de apoio — só o dono pode remover."""
+    try:
+        material = get_object_or_404(TblMaterialApoio, id_material=id_material)
+
+        if material.usuario_id != request.user.id:
+            return JsonResponse(
+                {'status': 'erro', 'mensagem': 'Você não pode remover este material.'},
+                status=403,
+            )
+
+        material.delete()
+        return JsonResponse({'status': 'sucesso'})
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'erro', 'mensagem': f'Erro ao remover: {str(e)}'},
+            status=500,
+        )    

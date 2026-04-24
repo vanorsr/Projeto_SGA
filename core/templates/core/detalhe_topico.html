@@ -215,14 +215,55 @@
 
     <!-- MATERIAL DE APOIO -->
     <h4 class="mb-3">🎒 Material de Apoio</h4>
-    <div class="list-group mb-5 material-apoio">
+
+    <div class="list-group mb-3 material-apoio" id="lista-materiais">
         {% for material in materiais %}
-            <a href="{{ material.link_conteudo }}" target="_blank" class="list-group-item list-group-item-action">
-                📺 {{ material.descricao }}
-            </a>
-        {% empty %}
-            <div class="alert alert-info">Sem material cadastrado.</div>
+            <div class="list-group-item d-flex justify-content-between align-items-center material-item"
+                 data-material-id="{{ material.id }}">
+                <a href="{{ material.link }}" target="_blank" class="flex-grow-1 material-link">
+                    <span class="material-tipo-icone">{{ material.tipo_label }}</span>
+                    <span class="ms-2">{{ material.titulo }}</span>
+                </a>
+                {% if material.e_dono %}
+                    <button class="btn-remover-material" onclick="removerMaterial({{ material.id }})" title="Remover">
+                        🗑️
+                    </button>
+                {% endif %}
+            </div>
         {% endfor %}
+    </div>
+
+    <div id="msg-sem-materiais" class="alert alert-info {% if materiais %}d-none{% endif %}">
+        Sem material cadastrado. Adicione o primeiro material abaixo.
+    </div>
+
+    <!-- Formulário inline pra adicionar material -->
+    <div class="card mt-3 mb-5 form-material-card">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">➕ Adicionar material de apoio</h6>
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <input type="text" id="novoMaterialTitulo" class="form-control" placeholder="Título (ex: Aula Professor X sobre Juros)">
+                </div>
+                <div class="col-md-4">
+                    <input type="url" id="novoMaterialLink" class="form-control" placeholder="Link (URL completa)">
+                </div>
+                <div class="col-md-2">
+                    <select id="novoMaterialTipo" class="form-select">
+                        <option value="video">🎥 Vídeo</option>
+                        <option value="pdf">📄 PDF</option>
+                        <option value="artigo">📰 Artigo</option>
+                        <option value="outro">🔗 Outro</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-success w-100" onclick="adicionarMaterial()" id="btnAdicionarMaterial" title="Adicionar">
+                        +
+                    </button>
+                </div>
+            </div>
+            <div id="msgErroMaterial" class="alert alert-danger mt-2 d-none"></div>
+        </div>
     </div>
 
     <!-- MODAL DE REGISTRO -->
@@ -473,6 +514,94 @@
 
             document.getElementById(idJustificativa).classList.remove('d-none');
         }
+
+        // ==========================================================
+        // MATERIAL DE APOIO — adicionar / remover via AJAX
+        // ==========================================================
+        function adicionarMaterial() {
+            const titulo = document.getElementById('novoMaterialTitulo').value.trim();
+            const link = document.getElementById('novoMaterialLink').value.trim();
+            const tipo = document.getElementById('novoMaterialTipo').value;
+            const erroDiv = document.getElementById('msgErroMaterial');
+            const btn = document.getElementById('btnAdicionarMaterial');
+
+            erroDiv.classList.add('d-none');
+
+            if (!titulo || !link) {
+                erroDiv.textContent = 'Preencha título e link.';
+                erroDiv.classList.remove('d-none');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳';
+
+            fetch(`/api/material/adicionar/{{ topico.id_topico }}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ titulo, link, tipo })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    const m = data.material;
+                    const lista = document.getElementById('lista-materiais');
+                    const novoItem = document.createElement('div');
+                    novoItem.className = 'list-group-item d-flex justify-content-between align-items-center material-item';
+                    novoItem.setAttribute('data-material-id', m.id);
+                    novoItem.innerHTML = `
+                        <a href="${m.link}" target="_blank" class="flex-grow-1 material-link">
+                            <span class="material-tipo-icone">${m.tipo_label}</span>
+                            <span class="ms-2">${m.titulo}</span>
+                        </a>
+                        <button class="btn-remover-material" onclick="removerMaterial(${m.id})" title="Remover">🗑️</button>
+                    `;
+                    lista.appendChild(novoItem);
+
+                    document.getElementById('msg-sem-materiais').classList.add('d-none');
+                    document.getElementById('novoMaterialTitulo').value = '';
+                    document.getElementById('novoMaterialLink').value = '';
+                    document.getElementById('novoMaterialTipo').value = 'video';
+                } else {
+                    erroDiv.textContent = data.mensagem || 'Erro ao adicionar.';
+                    erroDiv.classList.remove('d-none');
+                }
+            })
+            .catch(() => {
+                erroDiv.textContent = 'Erro de conexão.';
+                erroDiv.classList.remove('d-none');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '+';
+            });
+        }
+
+        function removerMaterial(idMaterial) {
+            if (!confirm('Remover este material de apoio?')) return;
+
+            fetch(`/api/material/remover/${idMaterial}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    const item = document.querySelector(`[data-material-id="${idMaterial}"]`);
+                    if (item) item.remove();
+                    const lista = document.getElementById('lista-materiais');
+                    if (lista.children.length === 0) {
+                        document.getElementById('msg-sem-materiais').classList.remove('d-none');
+                    }
+                } else {
+                    alert('Erro: ' + (data.mensagem || 'Erro ao remover.'));
+                }
+            })
+            .catch(() => alert('Erro de conexão.'));
+        }
     </script>
 
     <style>
@@ -483,44 +612,25 @@
             background-color: var(--em-superficie);
             border: 2px solid var(--em-info);
         }
-        .cronometro-title {
-            color: var(--em-titulo);
-        }
-        .cronometro-sub {
-            color: var(--em-texto-secundario);
-        }
-        .cronometro-display {
-            color: var(--em-texto-primario);
-        }
-        .cronometro-ativo {
-            background-color: var(--em-sucesso) !important;
-        }
+        .cronometro-title { color: var(--em-titulo); }
+        .cronometro-sub { color: var(--em-texto-secundario); }
+        .cronometro-display { color: var(--em-texto-primario); }
+        .cronometro-ativo { background-color: var(--em-sucesso) !important; }
         .cronometro-ativo .cronometro-title,
         .cronometro-ativo .cronometro-sub,
         .cronometro-ativo .cronometro-display {
             color: #FFFFFF !important;
         }
 
-        /* Tríade de cards (preserva cores vivas nos dois temas) */
-        .triade-card {
-            border: 0;
-        }
-        .triade-oque-e {
-            background-color: #3B82F6 !important;
-            color: #FFFFFF !important;
-        }
+        /* Tríade de cards */
+        .triade-card { border: 0; }
+        .triade-oque-e { background-color: #3B82F6 !important; color: #FFFFFF !important; }
         .triade-oque-e * { color: #FFFFFF !important; }
 
-        .triade-para-que-serve {
-            background-color: #22C55E !important;
-            color: #FFFFFF !important;
-        }
+        .triade-para-que-serve { background-color: #22C55E !important; color: #FFFFFF !important; }
         .triade-para-que-serve * { color: #FFFFFF !important; }
 
-        .triade-como-funciona {
-            background-color: #FBBF24 !important;
-            color: #092F59 !important;
-        }
+        .triade-como-funciona { background-color: #FBBF24 !important; color: #092F59 !important; }
         .triade-como-funciona * { color: #092F59 !important; }
 
         /* Aprofundamento Teórico */
@@ -561,28 +671,20 @@
             color: #FFFFFF !important;
             font-weight: 600;
         }
-        .simulado-header:not(.collapsed) {
-            background-color: var(--em-info) !important;
-        }
-        .simulado-header::after {
-            filter: brightness(0) invert(1);
-        }
+        .simulado-header:not(.collapsed) { background-color: var(--em-info) !important; }
+        .simulado-header::after { filter: brightness(0) invert(1); }
         .simulado-body {
             background-color: var(--em-superficie);
             color: var(--em-texto-primario);
         }
 
-        /* Card de questão */
         .questao-card {
             background-color: var(--em-superficie-elevada);
             border: 1px solid var(--em-borda);
             color: var(--em-texto-primario);
         }
-        .questao-card .card-text {
-            color: var(--em-texto-primario);
-        }
+        .questao-card .card-text { color: var(--em-texto-primario); }
 
-        /* Alternativas */
         .btn-alternativa {
             background-color: var(--em-superficie);
             color: var(--em-texto-primario);
@@ -597,10 +699,7 @@
             color: #FFFFFF;
             border-color: var(--em-info);
         }
-        .btn-alternativa.disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
+        .btn-alternativa.disabled { cursor: not-allowed; opacity: 0.7; }
         .alternativa-correta {
             background-color: rgba(34, 197, 94, 0.2) !important;
             border-color: var(--em-sucesso) !important;
@@ -613,22 +712,11 @@
             color: var(--em-texto-primario) !important;
         }
 
-        /* Justificativa */
         .justificativa-box {
             background-color: var(--em-superficie);
             border-left: 4px solid var(--em-sucesso);
             border-radius: var(--em-radius-md);
             color: var(--em-texto-primario);
-        }
-
-        /* Material de apoio */
-        .material-apoio .list-group-item {
-            background-color: var(--em-superficie);
-            color: var(--em-texto-primario);
-            border-color: var(--em-borda);
-        }
-        .material-apoio .list-group-item:hover {
-            background-color: var(--em-superficie-elevada);
         }
 
         /* Badge do nível */
@@ -638,20 +726,16 @@
             padding: 0.4em 0.75em;
         }
 
-        /* Modal respeita o tema */
+        /* Modal */
         .modal-content {
             background-color: var(--em-superficie);
             color: var(--em-texto-primario);
             border: 1px solid var(--em-borda);
         }
-        .modal-header, .modal-footer {
-            border-color: var(--em-borda);
-        }
-        [data-theme="dark"] .btn-close {
-            filter: invert(1);
-        }
+        .modal-header, .modal-footer { border-color: var(--em-borda); }
+        [data-theme="dark"] .btn-close { filter: invert(1); }
 
-        /* Botão YouTube — sem translateY pra não causar tremor */
+        /* Botão YouTube */
         .hover-youtube {
             transition: background-color 0.2s, box-shadow 0.2s;
         }
@@ -659,6 +743,45 @@
             background-color: #cc0000 !important;
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
             border-color: #cc0000 !important;
+        }
+
+        /* ===== Material de Apoio ===== */
+        .material-item {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+            border-color: var(--em-borda);
+            transition: background-color 0.2s;
+        }
+        .material-item:hover {
+            background-color: var(--em-superficie-elevada);
+        }
+        .material-link {
+            color: var(--em-texto-primario);
+            text-decoration: none;
+        }
+        .material-link:hover {
+            color: var(--em-titulo);
+        }
+        .material-tipo-icone {
+            font-size: 1rem;
+        }
+        .btn-remover-material {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 0.2s, background-color 0.2s;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--em-radius-sm);
+        }
+        .btn-remover-material:hover {
+            opacity: 1;
+            background-color: rgba(239, 68, 68, 0.15);
+        }
+        .form-material-card {
+            background-color: var(--em-superficie);
+            border: 1px dashed var(--em-borda);
         }
     </style>
 
