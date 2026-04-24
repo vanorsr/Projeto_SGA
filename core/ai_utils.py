@@ -265,35 +265,67 @@ def gerar_conteudo_ia(texto_contexto):
       - data: dict com o JSON da IA (se sucesso)
       - error_code: str curto (se falha)
       - error_message: str amigável (se falha)
+
+    Faz até MAX_TENTATIVAS_JSON tentativas caso o JSON venha malformado.
     """
+    MAX_TENTATIVAS_JSON = 2
     prompt = _montar_prompt(texto_contexto)
 
-    try:
-        texto_bruto = _chamar_provider_com_retry(prompt)
+    ultimo_erro_json = None
 
-        logger.info(f"[IA] Resposta recebida ({len(texto_bruto)} caracteres)")
+    for tentativa_json in range(1, MAX_TENTATIVAS_JSON + 1):
+        try:
+            texto_bruto = _chamar_provider_com_retry(prompt)
+            logger.info(
+                f"[IA] Resposta recebida na tentativa-JSON {tentativa_json}/{MAX_TENTATIVAS_JSON} "
+                f"({len(texto_bruto)} caracteres)"
+            )
 
-        texto_limpo = sanitizar_json(texto_bruto)
-        dados = json.loads(texto_limpo, strict=False)
+            texto_limpo = sanitizar_json(texto_bruto)
+            dados = json.loads(texto_limpo, strict=False)
 
-        return {
-            "success": True,
-            "data": dados,
-        }
+            return {
+                "success": True,
+                "data": dados,
+            }
 
-    except json.JSONDecodeError as e:
-        logger.error(f"[IA] JSON inválido após sanitização: {e}")
-        return {
-            "success": False,
-            "error_code": "JSON_INVALIDO",
-            "error_message": "A IA retornou um formato inesperado. Tente gerar novamente.",
-        }
+        except json.JSONDecodeError as e:
+            ultimo_erro_json = e
+            logger.warning(
+                f"[IA] JSON inválido na tentativa {tentativa_json}/{MAX_TENTATIVAS_JSON}: {e}"
+            )
+            # Loga um trecho do texto bruto pra diagnóstico
+            try:
+                preview = texto_bruto[:300] if texto_bruto else "(vazio)"
+                logger.warning(f"[IA] Preview do texto recebido: {preview!r}")
+            except Exception:
+                pass
 
-    except Exception as e:
-        info = _classificar_erro(e)
-        logger.error(f"[IA] Falha definitiva — código={info['codigo']} — {e}")
-        return {
-            "success": False,
-            "error_code": info["codigo"],
-            "error_message": info["mensagem_usuario"],
-        }
+            # Se ainda tem tentativa, continua o loop
+            if tentativa_json < MAX_TENTATIVAS_JSON:
+                time.sleep(1)
+                continue
+
+            # Última tentativa falhou — retorna erro
+            logger.error(f"[IA] JSON inválido após {MAX_TENTATIVAS_JSON} tentativas: {e}")
+            return {
+                "success": False,
+                "error_code": "JSON_INVALIDO",
+                "error_message": "A IA retornou um formato inesperado. Tente gerar novamente.",
+            }
+
+        except Exception as e:
+            info = _classificar_erro(e)
+            logger.error(f"[IA] Falha definitiva — código={info['codigo']} — {e}")
+            return {
+                "success": False,
+                "error_code": info["codigo"],
+                "error_message": info["mensagem_usuario"],
+            }
+
+    # Safety net (não deveria chegar aqui)
+    return {
+        "success": False,
+        "error_code": "JSON_INVALIDO",
+        "error_message": "A IA retornou um formato inesperado. Tente gerar novamente.",
+    }
