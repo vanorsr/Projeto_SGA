@@ -1,10 +1,11 @@
 {% extends 'core/base.html' %}
 
 {% block conteudo %}
-    
+
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li> <li class="breadcrumb-item"><a href="{% url 'lista_materias' %}">Matérias</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'lista_materias' %}">Matérias</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ materia.nome_materia }}</li>
       </ol>
     </nav>
@@ -14,47 +15,48 @@
             <h2 class="text-primary fw-bold mb-0">{{ materia.nome_materia }}</h2>
             <p class="text-muted small mb-0">Selecione um tópico para aprofundar</p>
         </div>
-        
+
         <div class="d-flex align-items-center gap-2">
             <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
                 📊 <span class="d-none d-md-inline ms-1">Painel</span>
             </a>
 
-            <span class="badge bg-light text-dark border shadow-sm">
+            <span class="badge badge-contador shadow-sm">
                  {{ topicos|length }} Tópicos
             </span>
         </div>
     </div>
 
-    <div class="list-group shadow-sm">
+    <div class="list-group shadow-sm topic-list">
         {% for topico in topicos %}
-            <a href="{% url 'detalhe_topico' topico.id_topico %}" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-start hover-effect">
-                
+            <a href="{% url 'detalhe_topico' topico.id_topico %}" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-start topic-item">
+
                 <div class="ms-2 me-auto">
-                    <div class="fw-bold text-dark mb-1" style="font-size: 1.1rem;">
-                        
+                    <div class="fw-bold topic-title mb-1">
+
                         {% if topico.o_que_e %}
                             <span title="Conteúdo Gerado (IA)" class="me-1">✅</span>
                         {% else %}
-                            <span title="Pendente" class="me-1 text-muted" style="opacity: 0.4;">⚪</span>
+                            <span title="Pendente" class="me-1 icon-pending">⚪</span>
                         {% endif %}
-                        
+
                         {{ topico.topico }}
                     </div>
-                    
-                    <div class="text-muted small mt-1 ms-4"> {% if topico.o_que_e %}
+
+                    <div class="text-muted small mt-1 ms-4">
+                        {% if topico.o_que_e %}
                             {{ topico.o_que_e|striptags|truncatechars:130 }}
                         {% else %}
-                            <em class="text-muted opacity-50">Conteúdo pendente de geração...</em>
+                            <em class="topic-pending">Conteúdo pendente de geração...</em>
                         {% endif %}
                     </div>
-                    
-                    <div class="mt-2 text-primary fw-bold ms-4" style="font-size: 0.8rem;">
+
+                    <div class="mt-2 topic-cta ms-4">
                         Acessar Estudo ➔
                     </div>
                 </div>
 
-                <span class="badge bg-secondary rounded-pill">
+                <span class="badge badge-nivel rounded-pill">
                     {{ topico.nivel_3 }}
                 </span>
             </a>
@@ -69,12 +71,61 @@
     </div>
 
     <style>
-        .hover-effect:hover {
-            background-color: #f8f9fa; /* Cinza bem clarinho ao passar o mouse */
-            border-left: 5px solid #0d6efd; /* Borda azul no canto esquerdo */
-            transition: all 0.2s;
+        /* Lista de tópicos com tema aplicado */
+        .topic-list .topic-item {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+            border-color: var(--em-borda);
+            border-left: 4px solid transparent;
+            transition: background-color 0.2s, border-left-color 0.2s;
         }
-        /* Ajuste para o ícone não ficar colado */
+
+        .topic-list .topic-item:hover {
+            background-color: var(--em-superficie-elevada);
+            border-left-color: var(--em-info);
+        }
+
+        .topic-title {
+            color: var(--em-titulo);
+            font-size: 1.1rem;
+        }
+
+        .icon-pending {
+            opacity: 0.5;
+        }
+
+        .topic-pending {
+            color: var(--em-texto-secundario);
+            opacity: 0.7;
+        }
+
+        /* CTA "Acessar Estudo" aparece só no hover do card */
+        .topic-cta {
+            color: var(--em-info);
+            font-weight: 600;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .topic-item:hover .topic-cta {
+            opacity: 1;
+        }
+
+        /* Badge contador no topo (substitui bg-light) */
+        .badge-contador {
+            background-color: var(--em-superficie-elevada);
+            color: var(--em-texto-primario);
+            border: 1px solid var(--em-borda);
+            padding: 0.4em 0.75em;
+        }
+
+        /* Badge nível-3 ao lado de cada tópico */
+        .badge-nivel {
+            background-color: var(--em-superficie-elevada);
+            color: var(--em-texto-secundario);
+            padding: 0.4em 0.75em;
+        }
+
         .gap-2 { gap: 0.5rem; }
     </style>
 

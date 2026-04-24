@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURAÇÃO: troque aqui para mudar de provider
 # ============================================================================
-PROVIDER_ATIVO = "gemini"   # opções: "gemini" | "claude"
+PROVIDER_ATIVO = "claude"   # opções: "gemini" | "claude"
 MAX_TENTATIVAS = 3          # nº máximo de tentativas em caso de erro transitório
 BACKOFF_INICIAL = 2         # segundos — dobra a cada tentativa (2s, 4s, 8s)
 

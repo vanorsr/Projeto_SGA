@@ -26,7 +26,7 @@
         <div class="col">
             <div class="card h-100 shadow-sm hover-card border-0">
                 <div class="card-body border-start border-4 border-primary">
-                    <h5 class="card-title text-dark fw-bold">{{ materia.nome_materia }}</h5>
+                    <h5 class="card-title fw-bold">{{ materia.nome_materia }}</h5>
                     <p class="card-text text-muted small">
                         Clique para acessar os tópicos e conteúdos desta disciplina.
                     </p>
@@ -51,10 +51,9 @@
 
 <style>
     .hover-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
     }
     .hover-card:hover {
-        transform: translateY(-5px);
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
     }
 </style>

@@ -126,3 +126,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configuração da IA (Google Gemini)
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')

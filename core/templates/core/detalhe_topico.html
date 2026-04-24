@@ -17,19 +17,20 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="text-primary mb-0">{{ topico.topico }}</h2>
-            <span class="badge bg-secondary">{{ topico.nivel_3 }}</span>
+            <span class="badge badge-nivel">{{ topico.nivel_3 }}</span>
         </div>
     </div>
 
-    <div class="card border-primary mb-4 shadow-sm">
+    <!-- SESSÃO DE ESTUDO / CRONÔMETRO -->
+    <div class="card cronometro-card mb-4 shadow-sm">
         <div class="card-body d-flex justify-content-between align-items-center transition-bg" id="containerCronometro">
             <div>
-                <h5 class="card-title text-primary mb-0">⏱️ Sessão de Estudo</h5>
-                <small class="text-muted">Registre seu foco neste tópico</small>
+                <h5 class="card-title mb-0 cronometro-title">⏱️ Sessão de Estudo</h5>
+                <small class="cronometro-sub">Registre seu foco neste tópico</small>
             </div>
 
             <div class="text-center">
-                <h1 class="display-4 fw-bold mb-0 text-dark" id="cronometro">00:00:00</h1>
+                <h1 class="display-4 fw-bold mb-0 cronometro-display" id="cronometro">00:00:00</h1>
             </div>
 
             <div>
@@ -39,33 +40,36 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-end mb-3 gap-2"> {% if not topico.o_que_e %} 
+    <!-- AÇÕES: IA + VÍDEO -->
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        {% if not topico.o_que_e %}
         <button onclick="gerarResumoIA()" id="btnIA" class="btn btn-outline-primary transition-bg">
             ✨ Gerar Conteúdo com IA
         </button>
         {% else %}
-        <button onclick="gerarResumoIA()" id="btnIA" class="btn btn-light text-muted border" title="Regerar conteúdo">
+        <button onclick="gerarResumoIA()" id="btnIA" class="btn btn-ghost transition-bg" title="Regerar conteúdo">
             🔄 Refazer com IA
         </button>
         {% endif %}
 
-        <a href="https://www.youtube.com/results?search_query=Aula+Concurso+{{ topico.id_materia_fk.nome_materia }}+{{ topico.topico }}{% if topico.nivel_3 %}+{{ topico.nivel_3 }}{% endif %}" 
-        target="_blank" 
-        class="btn btn-danger text-white d-flex align-items-center shadow-sm hover-youtube">
+        <a href="https://www.youtube.com/results?search_query=Aula+Concurso+{{ topico.id_materia_fk.nome_materia }}+{{ topico.topico }}{% if topico.nivel_3 %}+{{ topico.nivel_3 }}{% endif %}"
+           target="_blank"
+           class="btn btn-danger text-white d-flex align-items-center shadow-sm hover-youtube">
             <span class="me-2">📺</span> Vídeo Aulas
         </a>
-
     </div>
+
+    <!-- TRÍADE: O que é / Para que serve / Como funciona -->
     <div class="row mb-4">
         <div class="col-md-4 d-flex align-items-stretch">
-            <div class="card text-white bg-primary mb-3 w-100 shadow-sm">
+            <div class="card triade-card triade-oque-e mb-3 w-100 shadow-sm">
                 <div class="card-header fw-bold">O que é?</div>
                 <div class="card-body">
                     <div class="card-text">
                         {% if topico.o_que_e_html %}
                             {{ topico.o_que_e_html|safe }}
                         {% else %}
-                            <em class="small text-white-50">Conteúdo pendente...</em>
+                            <em class="small">Conteúdo pendente...</em>
                         {% endif %}
                     </div>
                 </div>
@@ -73,14 +77,14 @@
         </div>
 
         <div class="col-md-4 d-flex align-items-stretch">
-            <div class="card text-white bg-success mb-3 w-100 shadow-sm">
+            <div class="card triade-card triade-para-que-serve mb-3 w-100 shadow-sm">
                 <div class="card-header fw-bold">Para que serve?</div>
                 <div class="card-body">
                     <div class="card-text">
                         {% if topico.para_que_serve_html %}
                             {{ topico.para_que_serve_html|safe }}
                         {% else %}
-                            <em class="small text-white-50">Conteúdo pendente...</em>
+                            <em class="small">Conteúdo pendente...</em>
                         {% endif %}
                     </div>
                 </div>
@@ -88,14 +92,14 @@
         </div>
 
         <div class="col-md-4 d-flex align-items-stretch">
-            <div class="card text-white bg-warning mb-3 w-100 shadow-sm">
-                <div class="card-header fw-bold text-dark">Como funciona?</div>
+            <div class="card triade-card triade-como-funciona mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">Como funciona?</div>
                 <div class="card-body">
-                    <div class="card-text text-dark">
+                    <div class="card-text">
                         {% if topico.como_funciona_html %}
                             {{ topico.como_funciona_html|safe }}
                         {% else %}
-                            <em class="small text-dark-50">Conteúdo pendente...</em>
+                            <em class="small">Conteúdo pendente...</em>
                         {% endif %}
                     </div>
                 </div>
@@ -103,21 +107,22 @@
         </div>
     </div>
 
+    <!-- APROFUNDAMENTO TEÓRICO -->
     <div class="accordion mb-5" id="accordionResumo">
-        <div class="card border-dark shadow-sm">
-            
-            <div class="card-header bg-dark" id="headingResumo">
+        <div class="card aprofundamento-card shadow-sm">
+
+            <div class="card-header aprofundamento-header" id="headingResumo">
                 <h5 class="mb-0">
-                    <button class="btn btn-dark w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResumo" aria-expanded="false" aria-controls="collapseResumo">
+                    <button class="btn btn-aprofundamento w-100 text-start d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResumo" aria-expanded="false" aria-controls="collapseResumo">
                         <span>📚 Aprofundamento Teórico (Clique para ler)</span>
-                        <span class="badge bg-secondary">▼</span>
+                        <span class="badge badge-nivel">▼</span>
                     </button>
                 </h5>
             </div>
 
             <div id="collapseResumo" class="collapse" aria-labelledby="headingResumo" data-bs-parent="#accordionResumo">
                 <div class="card-body">
-                    <div class="card-text text-dark">
+                    <div class="card-text aprofundamento-body">
                         {% if topico.resumo_curto_html %}
                             {{ topico.resumo_curto_html|safe }}
                         {% else %}
@@ -126,7 +131,7 @@
                             </p>
                         {% endif %}
                     </div>
-                    
+
                     <div class="text-center mt-4">
                         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseResumo">
                             ▲ Recolher Texto
@@ -137,100 +142,102 @@
         </div>
     </div>
 
+    <hr class="my-5">
 
-<hr class="my-5">
+    <!-- SIMULADO -->
+    <div class="accordion mb-5 shadow-sm" id="accordionSimulado">
+        <div class="accordion-item simulado-item">
+            <h2 class="accordion-header" id="headingQuestoes">
+                <button class="accordion-button collapsed simulado-header" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#collapseQuestoes"
+                        aria-expanded="false" aria-controls="collapseQuestoes">
+                    <i class="fas fa-tasks me-2"></i>
+                    <strong>SIMULADO DE ELITE: Desafie seu conhecimento agora</strong>
+                </button>
+            </h2>
 
-<div class="accordion mb-5 shadow-sm" id="accordionSimulado">
-    <div class="accordion-item border-primary">
-        <h2 class="accordion-header" id="headingQuestoes">
-            <button class="accordion-button collapsed bg-primary text-white" type="button" 
-                    data-bs-toggle="collapse" data-bs-target="#collapseQuestoes" 
-                    aria-expanded="false" aria-controls="collapseQuestoes">
-                <i class="fas fa-tasks me-2"></i> 
-                <strong>SIMULADO DE ELITE: Desafie seu conhecimento agora</strong>
-            </button>
-        </h2>
-        
-        <div id="collapseQuestoes" class="accordion-collapse collapse" 
-             aria-labelledby="headingQuestoes" data-bs-parent="#accordionSimulado">
-            <div class="accordion-body bg-light">
-                
-                <div class="d-flex justify-content-center gap-4 mb-4">
-                    <div class="badge bg-success p-2 fs-6">Acertos: <span id="contador-acertos">0</span></div>
-                    <div class="badge bg-danger p-2 fs-6">Erros: <span id="contador-erros">0</span></div>
-                </div>
+            <div id="collapseQuestoes" class="accordion-collapse collapse"
+                 aria-labelledby="headingQuestoes" data-bs-parent="#accordionSimulado">
+                <div class="accordion-body simulado-body">
 
-                {% for questao in topico.questoes.all %}
-                <div class="card mb-4 border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="text-primary mb-3">Questão {{ forloop.counter }}</h5>
-                        <p class="card-text fw-bold fs-5 text-dark">{{ questao.enunciado }}</p>
-                        
-                        <div class="list-group gap-2">
-                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
-                                    onclick="verificarResposta(this, 'A', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
-                                <strong>A)</strong> {{ questao.opcao_a }}
-                            </button>
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div class="badge bg-success p-2 fs-6">Acertos: <span id="contador-acertos">0</span></div>
+                        <div class="badge bg-danger p-2 fs-6">Erros: <span id="contador-erros">0</span></div>
+                    </div>
 
-                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
-                                    onclick="verificarResposta(this, 'B', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
-                                <strong>B)</strong> {{ questao.opcao_b }}
-                            </button>
+                    {% for questao in topico.questoes.all %}
+                    <div class="card mb-4 shadow-sm questao-card">
+                        <div class="card-body">
+                            <h5 class="text-primary mb-3">Questão {{ forloop.counter }}</h5>
+                            <p class="card-text fw-bold fs-5">{{ questao.enunciado }}</p>
 
-                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
-                                    onclick="verificarResposta(this, 'C', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
-                                <strong>C)</strong> {{ questao.opcao_c }}
-                            </button>
+                            <div class="list-group gap-2">
+                                <button type="button" class="list-group-item list-group-item-action btn-alternativa"
+                                        onclick="verificarResposta(this, 'A', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                    <strong>A)</strong> {{ questao.opcao_a }}
+                                </button>
 
-                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
-                                    onclick="verificarResposta(this, 'D', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
-                                <strong>D)</strong> {{ questao.opcao_d }}
-                            </button>
+                                <button type="button" class="list-group-item list-group-item-action btn-alternativa"
+                                        onclick="verificarResposta(this, 'B', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                    <strong>B)</strong> {{ questao.opcao_b }}
+                                </button>
 
-                            <button type="button" class="list-group-item list-group-item-action border rounded btn-alternativa" 
-                                    onclick="verificarResposta(this, 'E', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
-                                <strong>E)</strong> {{ questao.opcao_e }}
-                            </button>
-                        </div>
-                        <div id="justificativa-{{ questao.id }}" class="mt-3 p-3 bg-white border-start border-4 border-success rounded d-none shadow-sm">
-                            <h6 class="fw-bold text-success"><i class="fas fa-chalkboard-teacher"></i> Justificativa Técnica:</h6>
-                            <p class="mb-0 text-muted italic">{{ questao.justificativa }}</p>
+                                <button type="button" class="list-group-item list-group-item-action btn-alternativa"
+                                        onclick="verificarResposta(this, 'C', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                    <strong>C)</strong> {{ questao.opcao_c }}
+                                </button>
+
+                                <button type="button" class="list-group-item list-group-item-action btn-alternativa"
+                                        onclick="verificarResposta(this, 'D', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                    <strong>D)</strong> {{ questao.opcao_d }}
+                                </button>
+
+                                <button type="button" class="list-group-item list-group-item-action btn-alternativa"
+                                        onclick="verificarResposta(this, 'E', '{{ questao.alternativa_correta }}', 'justificativa-{{ questao.id }}', '{{ questao.id }}', '{{ topico.id_topico }}')">
+                                    <strong>E)</strong> {{ questao.opcao_e }}
+                                </button>
+                            </div>
+
+                            <div id="justificativa-{{ questao.id }}" class="mt-3 p-3 justificativa-box d-none shadow-sm">
+                                <h6 class="fw-bold text-success"><i class="fas fa-chalkboard-teacher"></i> Justificativa Técnica:</h6>
+                                <p class="mb-0 fst-italic">{{ questao.justificativa }}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                {% empty %}
-                <p class="text-center py-4">Nenhuma questão gerada. Clique em "Refazer com IA" para criar o simulado.</p>
-                {% endfor %}
+                    {% empty %}
+                    <p class="text-center py-4">Nenhuma questão gerada. Clique em "Refazer com IA" para criar o simulado.</p>
+                    {% endfor %}
 
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-
+    <!-- MATERIAL DE APOIO -->
     <h4 class="mb-3">🎒 Material de Apoio</h4>
-    <div class="list-group mb-5">
+    <div class="list-group mb-5 material-apoio">
         {% for material in materiais %}
             <a href="{{ material.link_conteudo }}" target="_blank" class="list-group-item list-group-item-action">
                 📺 {{ material.descricao }}
             </a>
         {% empty %}
-            <div class="alert alert-warning">Sem material cadastrado.</div>
+            <div class="alert alert-info">Sem material cadastrado.</div>
         {% endfor %}
     </div>
 
-   <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
+    <!-- MODAL DE REGISTRO -->
+    <div class="modal fade" id="modalRegistro" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-          <div class="modal-header bg-primary text-white">
+          <div class="modal-header">
             <h5 class="modal-title">⏱️ Sessão Finalizada!</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          
+
           <div class="modal-body">
-            <p class="text-center text-muted">Você estudou por <strong id="tempoFinalDisplay" class="text-dark fs-4"></strong>.</p>
+            <p class="text-center">Você estudou por <strong id="tempoFinalDisplay" class="fs-4"></strong>.</p>
             <hr>
-            
+
             <form id="formDesempenho">
                 <h6 class="fw-bold text-primary mb-2">📝 Desempenho</h6>
                 <div class="row g-3 mb-3">
@@ -247,18 +254,16 @@
                 <hr>
 
                 <h6 class="fw-bold text-primary mb-2">📊 Autoavaliação</h6>
-                
+
                 <div class="mb-3">
                     <label class="form-label small mb-1">Nível de Confiança</label>
                     <select id="inputNivel" class="form-select">
                         <option value="Baixo" {% if status_atual.nivel_confianca == 'Baixo' %}selected{% endif %}>
                             🔴 Baixo (Preciso reforçar)
                         </option>
-    
                         <option value="Médio" {% if status_atual.nivel_confianca == 'Médio' or not status_atual %}selected{% endif %}>
                             🟡 Médio (Razoável)
                         </option>
-    
                         <option value="Alto" {% if status_atual.nivel_confianca == 'Alto' %}selected{% endif %}>
                             🟢 Alto (Dominado)
                         </option>
@@ -271,16 +276,15 @@
                         <option value="Iniciado" {% if status_atual.status == 'Iniciado' or not status_atual %}selected{% endif %}>
                             🚀 Em Andamento
                         </option>
-    
                         <option value="Concluído" {% if status_atual.status == 'Concluído' %}selected{% endif %}>
                             🏁 Concluído (Finalizado)
-                        <option>
+                        </option>
                     </select>
                 </div>
 
             </form>
           </div>
-          
+
           <div class="modal-footer">
             <button type="button" class="btn btn-success w-100 fw-bold" onclick="enviarDadosParaBanco()">
                 💾 Salvar Sessão e Atualizar Gráficos
@@ -291,11 +295,10 @@
     </div>
 
     <script>
-        // Variáveis globais
         let segundos = 0;
         let intervalo;
         let estaRodando = false;
-        let tempoCongelado = 0; 
+        let tempoCongelado = 0;
 
         function formatarTempo(seg) {
             const h = String(Math.floor(seg / 3600)).padStart(2, '0');
@@ -314,19 +317,11 @@
             if (!estaRodando) {
                 intervalo = setInterval(atualizarCronometro, 1000);
                 estaRodando = true;
-                
+
                 document.getElementById('btnPlay').classList.add('d-none');
                 document.getElementById('btnPause').classList.remove('d-none');
-                
-                let container = document.getElementById('containerCronometro');
-                container.classList.remove('bg-light');
-                container.classList.add('bg-success', 'text-white');
-                
-                container.querySelector('.card-title').classList.remove('text-primary');
-                container.querySelector('.card-title').classList.add('text-white');
-                container.querySelector('.text-muted').classList.add('text-white-50');
-                container.querySelector('h1').classList.remove('text-dark');
-                container.querySelector('h1').classList.add('text-white');
+
+                document.getElementById('containerCronometro').classList.add('cronometro-ativo');
             }
         }
 
@@ -336,22 +331,14 @@
             tempoCongelado = segundos;
 
             document.getElementById('tempoFinalDisplay').innerText = formatarTempo(tempoCongelado);
-            
+
             var myModal = new bootstrap.Modal(document.getElementById('modalRegistro'));
             myModal.show();
 
             document.getElementById('btnPlay').classList.remove('d-none');
             document.getElementById('btnPause').classList.add('d-none');
-            
-            let container = document.getElementById('containerCronometro');
-            container.classList.remove('bg-success', 'text-white');
-            container.classList.add('bg-light');
 
-            container.querySelector('.card-title').classList.add('text-primary');
-            container.querySelector('.card-title').classList.remove('text-white');
-            container.querySelector('.text-muted').classList.remove('text-white-50');
-            container.querySelector('h1').classList.add('text-dark');
-            container.querySelector('h1').classList.remove('text-white');
+            document.getElementById('containerCronometro').classList.remove('cronometro-ativo');
 
             document.title = "SGA - Sistema de Gestão Acadêmica";
         }
@@ -359,14 +346,12 @@
         function enviarDadosParaBanco() {
             let questoes = document.getElementById('inputQuestoes').value;
             let erros = document.getElementById('inputErros').value;
-            // Pegando os novos valores
             let nivel = document.getElementById('inputNivel').value;
             let status = document.getElementById('inputStatus').value;
 
             if (questoes === "") questoes = null;
             if (erros === "") erros = null;
 
-            // Feedback visual no botão
             const btnSalvar = document.querySelector('#modalRegistro .btn-success');
             const textoOriginal = btnSalvar.innerText;
             btnSalvar.innerText = "Salvando...";
@@ -383,17 +368,15 @@
                     'tempo_segundos': tempoCongelado,
                     'qtd_questoes': questoes,
                     'qtd_erros': erros,
-                    'nivel_confianca': nivel, // Enviando novos dados
+                    'nivel_confianca': nivel,
                     'status_estudo': status
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if(data.status === 'sucesso') {
-                    // Redireciona para a Home para ver os gráficos atualizados? 
-                    // Ou recarrega a página? Vamos recarregar por enquanto.
                     alert("✅ Dados salvos com sucesso!");
-                    location.reload(); 
+                    location.reload();
                 } else {
                     alert("❌ Erro ao salvar: " + data.mensagem);
                     btnSalvar.innerText = textoOriginal;
@@ -408,12 +391,13 @@
             });
         }
 
-        // FUNÇÃO DA IA
         function gerarResumoIA() {
             const btn = document.getElementById('btnIA');
             const textoOriginal = btn.innerHTML;
 
             btn.innerHTML = '⏳ Escrevendo...';
+            btn.classList.remove('btn-outline-primary', 'btn-ghost');
+            btn.classList.add('btn-info');
             btn.disabled = true;
 
             fetch('{% url "gerar_conteudo" topico.id_topico %}', {
@@ -439,75 +423,242 @@
             });
         }
 
-        // --- COLE ESTE BLOCO NOVO AQUI DENTRO DO <script> ---
-    let acertos = 0;
-    let erros = 0;
+        let acertos = 0;
+        let erros = 0;
 
-    function verificarResposta(botao, escolha, correta, idJustificativa, questaoId, topicoId) {
-        const grupo = botao.closest('.list-group');
-        const botoes = grupo.querySelectorAll('.btn-alternativa');
-        
-        if (grupo.classList.contains('respondida')) return;
-        grupo.classList.add('respondida');
+        function verificarResposta(botao, escolha, correta, idJustificativa, questaoId, topicoId) {
+            const grupo = botao.closest('.list-group');
+            const botoes = grupo.querySelectorAll('.btn-alternativa');
 
-        botoes.forEach(b => b.classList.add('disabled'));
+            if (grupo.classList.contains('respondida')) return;
+            grupo.classList.add('respondida');
 
-        const acertou = (escolha === correta);
+            botoes.forEach(b => b.classList.add('disabled'));
 
-        if (acertou) {
-            botao.classList.add('list-group-item-success', 'fw-bold');
-            botao.innerHTML += ' ✅ (Correto!)';
-            acertos++;
-            document.getElementById('contador-acertos').innerText = acertos;
-        } else {
-            botao.classList.add('list-group-item-danger');
-            botao.innerHTML += ' ❌ (Incorreto)';
-            erros++;
-            document.getElementById('contador-erros').innerText = erros;
-            
-            botoes.forEach(b => {
-                if (b.innerText.trim().startsWith(correta + ')')) {
-                    b.classList.add('list-group-item-success', 'opacity-75');
-                }
-            });
-        }
+            const acertou = (escolha === correta);
 
-        // --- PARTE NOVA: ENVIAR PARA O BANCO DE DADOS (AJAX) ---
-        fetch('/salvar-resultado-questao/', { // Verifique se esta URL está igual na sua urls.py
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                'questao_id': questaoId,
-                'topico_id': topicoId,
-                'acertou': acertou
+            if (acertou) {
+                botao.classList.add('alternativa-correta');
+                botao.innerHTML += ' ✅ (Correto!)';
+                acertos++;
+                document.getElementById('contador-acertos').innerText = acertos;
+            } else {
+                botao.classList.add('alternativa-errada');
+                botao.innerHTML += ' ❌ (Incorreto)';
+                erros++;
+                document.getElementById('contador-erros').innerText = erros;
+
+                botoes.forEach(b => {
+                    if (b.innerText.trim().startsWith(correta + ')')) {
+                        b.classList.add('alternativa-correta', 'opacity-75');
+                    }
+                });
+            }
+
+            fetch('/salvar-resultado-questao/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'questao_id': questaoId,
+                    'topico_id': topicoId,
+                    'acertou': acertou
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => console.log('Resultado salvo no banco:', data))
-        .catch(error => console.error('Erro ao salvar:', error));
-        // -------------------------------------------------------
+            .then(response => response.json())
+            .then(data => console.log('Resultado salvo:', data))
+            .catch(error => console.error('Erro ao salvar:', error));
 
-        document.getElementById(idJustificativa).classList.remove('d-none');
-    }
-        
+            document.getElementById(idJustificativa).classList.remove('d-none');
+        }
     </script>
 
     <style>
-    /* Efeito de transição suave para botões */
-    .transition-bg {
-        transition: all 0.3s ease;
+        .transition-bg { transition: all 0.3s ease; }
+
+        /* Cronômetro */
+        .cronometro-card {
+            background-color: var(--em-superficie);
+            border: 2px solid var(--em-info);
+        }
+        .cronometro-title {
+            color: var(--em-titulo);
+        }
+        .cronometro-sub {
+            color: var(--em-texto-secundario);
+        }
+        .cronometro-display {
+            color: var(--em-texto-primario);
+        }
+        .cronometro-ativo {
+            background-color: var(--em-sucesso) !important;
+        }
+        .cronometro-ativo .cronometro-title,
+        .cronometro-ativo .cronometro-sub,
+        .cronometro-ativo .cronometro-display {
+            color: #FFFFFF !important;
         }
 
-    /* Efeito hover especial para o botão do YouTube */
-    .hover-youtube:hover {
-        background-color: #cc0000 !important; /* Vermelho mais intenso */
-        transform: translateY(-2px); /* Sobe levemente */
-        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4) !important; /* Sombra vermelha */
-        border-color: #cc0000 !important;
-        transition: all 0.2s;
+        /* Tríade de cards (preserva cores vivas nos dois temas) */
+        .triade-card {
+            border: 0;
+        }
+        .triade-oque-e {
+            background-color: #3B82F6 !important;
+            color: #FFFFFF !important;
+        }
+        .triade-oque-e * { color: #FFFFFF !important; }
+
+        .triade-para-que-serve {
+            background-color: #22C55E !important;
+            color: #FFFFFF !important;
+        }
+        .triade-para-que-serve * { color: #FFFFFF !important; }
+
+        .triade-como-funciona {
+            background-color: #FBBF24 !important;
+            color: #092F59 !important;
+        }
+        .triade-como-funciona * { color: #092F59 !important; }
+
+        /* Aprofundamento Teórico */
+        .aprofundamento-card {
+            background-color: var(--em-superficie);
+            border: 1px solid var(--em-borda);
+        }
+        .aprofundamento-header {
+            background-color: var(--em-superficie-elevada);
+            border-bottom: 1px solid var(--em-borda);
+            padding: 0;
+        }
+        .btn-aprofundamento {
+            background-color: transparent;
+            color: var(--em-texto-primario);
+            border: 0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        .btn-aprofundamento:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--em-titulo);
+        }
+        .aprofundamento-body {
+            color: var(--em-texto-primario);
+            line-height: 1.7;
+        }
+
+        /* Simulado */
+        .simulado-item {
+            background-color: transparent;
+            border: 1px solid var(--em-info);
+            border-radius: var(--em-radius-lg);
+            overflow: hidden;
+        }
+        .simulado-header, .accordion-button.simulado-header {
+            background-color: var(--em-info) !important;
+            color: #FFFFFF !important;
+            font-weight: 600;
+        }
+        .simulado-header:not(.collapsed) {
+            background-color: var(--em-info) !important;
+        }
+        .simulado-header::after {
+            filter: brightness(0) invert(1);
+        }
+        .simulado-body {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+        }
+
+        /* Card de questão */
+        .questao-card {
+            background-color: var(--em-superficie-elevada);
+            border: 1px solid var(--em-borda);
+            color: var(--em-texto-primario);
+        }
+        .questao-card .card-text {
+            color: var(--em-texto-primario);
+        }
+
+        /* Alternativas */
+        .btn-alternativa {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+            border: 1px solid var(--em-borda);
+            border-radius: var(--em-radius-md) !important;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .btn-alternativa:hover:not(.disabled) {
+            background-color: var(--em-info);
+            color: #FFFFFF;
+            border-color: var(--em-info);
+        }
+        .btn-alternativa.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .alternativa-correta {
+            background-color: rgba(34, 197, 94, 0.2) !important;
+            border-color: var(--em-sucesso) !important;
+            color: var(--em-texto-primario) !important;
+            font-weight: 600;
+        }
+        .alternativa-errada {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            border-color: var(--em-perigo) !important;
+            color: var(--em-texto-primario) !important;
+        }
+
+        /* Justificativa */
+        .justificativa-box {
+            background-color: var(--em-superficie);
+            border-left: 4px solid var(--em-sucesso);
+            border-radius: var(--em-radius-md);
+            color: var(--em-texto-primario);
+        }
+
+        /* Material de apoio */
+        .material-apoio .list-group-item {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+            border-color: var(--em-borda);
+        }
+        .material-apoio .list-group-item:hover {
+            background-color: var(--em-superficie-elevada);
+        }
+
+        /* Badge do nível */
+        .badge-nivel {
+            background-color: var(--em-superficie-elevada);
+            color: var(--em-texto-secundario);
+            padding: 0.4em 0.75em;
+        }
+
+        /* Modal respeita o tema */
+        .modal-content {
+            background-color: var(--em-superficie);
+            color: var(--em-texto-primario);
+            border: 1px solid var(--em-borda);
+        }
+        .modal-header, .modal-footer {
+            border-color: var(--em-borda);
+        }
+        [data-theme="dark"] .btn-close {
+            filter: invert(1);
+        }
+
+        /* Botão YouTube — sem translateY pra não causar tremor */
+        .hover-youtube {
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .hover-youtube:hover {
+            background-color: #cc0000 !important;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+            border-color: #cc0000 !important;
         }
     </style>
 
