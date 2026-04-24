@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "gunicorn setup.wsgi:application"
+    startCommand: "gunicorn setup.wsgi:application --workers=1 --timeout=120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
