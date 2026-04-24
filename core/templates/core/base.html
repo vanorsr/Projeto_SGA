@@ -1,41 +1,73 @@
+{% load static %}
 <!doctype html>
 <html lang="pt-br">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SGA - Sistema de Gestão de Aprendizagem</title>
-    
+
+    <!-- Poppins (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <style>
-        body { background-color: #f8f9fa; }
-        .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    </style>
+
+    <!-- Tema ElevaMind (sobrescreve Bootstrap) -->
+    <link rel="stylesheet" href="{% static 'core/css/elevamind-theme.css' %}">
+
+    <!-- Aplica tema salvo ANTES do render pra evitar flash de tema errado -->
+    <script>
+      (function() {
+        const saved = localStorage.getItem('sga-theme');
+        if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
   </head>
   <body>
 
-    <nav class="navbar navbar-dark bg-primary mb-4">
-      <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'lista_materias' %}">
-            🎓 Elevamind SGA
+    <nav class="navbar mb-4">
+      <div class="container d-flex justify-content-between align-items-center">
+        <a class="navbar-brand" href="{% url 'lista_materias' %}">
+          🎓 Elevamind SGA
         </a>
+
+        <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+          <span class="icon-moon">🌙</span>
+          <span class="icon-sun">☀️</span>
+        </button>
       </div>
     </nav>
 
     <div class="container">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                {% block conteudo %}
-                {% endblock %}
-            </div>
+      <div class="card">
+        <div class="card-body">
+          {% block conteudo %}{% endblock %}
         </div>
-        
-        <footer class="mt-4 text-center text-muted small">
-            <p>&copy; 2025 Elevamind - Versão Alpha</p>
-        </footer>
+      </div>
+
+      <footer class="mt-4 text-center text-muted small">
+        <p>&copy; 2026 Elevamind - Versão Alpha</p>
+      </footer>
     </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Toggle de tema: persiste escolha no localStorage -->
+    <script>
+      (function() {
+        const btn  = document.getElementById('theme-toggle');
+        const root = document.documentElement;
+        btn.addEventListener('click', function() {
+          const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+          const next    = current === 'dark' ? 'light' : 'dark';
+          if (next === 'dark') root.setAttribute('data-theme', 'dark');
+          else root.removeAttribute('data-theme');
+          localStorage.setItem('sga-theme', next);
+        });
+      })();
+    </script>
 
   </body>
 </html>

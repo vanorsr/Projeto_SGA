@@ -1,0 +1,375 @@
+/* ============================================================================
+   ELEVAMIND DESIGN SYSTEM - Tema SGA
+   Baseado no Manual da Marca ElevaMind Oficial
+   Suporte a tema claro e escuro, WCAG 2.1 AA/AAA
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   1. TEMA CLARO (padrão)
+   ---------------------------------------------------------------------------- */
+:root {
+    /* Cores - Paleta Clara */
+    --em-fundo-primario: #F8FAFC;
+    --em-azul-profundo: #092F59;
+    --em-sucesso: #22C55E;
+    --em-perigo: #EF4444;
+    --em-aviso: #FBBF24;
+    --em-info: #3B82F6;
+    --em-texto-secundario: #475569;
+    --em-borda: #E2E8F0;
+    --em-desabilitado: #CBD5E1;
+    --em-branco: #FFFFFF;
+
+    /* Tipografia */
+    --em-font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --em-font-size-base: 16px;
+    --em-font-size-sm: 14px;
+    --em-font-size-xs: 12px;
+    --em-line-height: 1.6;
+
+    /* Escala tipográfica (conforme manual) */
+    --em-h1-size: 48px;
+    --em-h2-size: 36px;
+    --em-h3-size: 28px;
+    --em-h4-size: 22px;
+    --em-h5-size: 18px;
+
+    /* Raio de borda */
+    --em-radius-sm: 4px;
+    --em-radius-md: 6px;
+    --em-radius-lg: 8px;
+
+    /* Sombras */
+    --em-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --em-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --em-shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
+
+    /* Transições */
+    --em-transition-fast: 200ms ease-in-out;
+    --em-transition-normal: 300ms ease-in-out;
+
+    /* Mapeamento para Bootstrap 5 (sobrescreve variáveis nativas) */
+    --bs-primary: var(--em-azul-profundo);
+    --bs-primary-rgb: 9, 47, 89;
+    --bs-success: var(--em-sucesso);
+    --bs-success-rgb: 34, 197, 94;
+    --bs-danger: var(--em-perigo);
+    --bs-danger-rgb: 239, 68, 68;
+    --bs-warning: var(--em-aviso);
+    --bs-warning-rgb: 251, 191, 36;
+    --bs-info: var(--em-info);
+    --bs-info-rgb: 59, 130, 246;
+    --bs-body-bg: var(--em-fundo-primario);
+    --bs-body-color: var(--em-azul-profundo);
+    --bs-border-color: var(--em-borda);
+    --bs-font-sans-serif: var(--em-font-family);
+    --bs-border-radius: var(--em-radius-md);
+    --bs-border-radius-sm: var(--em-radius-sm);
+    --bs-border-radius-lg: var(--em-radius-lg);
+}
+
+/* ----------------------------------------------------------------------------
+   2. TEMA ESCURO (ativado via data-theme="dark" no <body>)
+   ---------------------------------------------------------------------------- */
+[data-theme="dark"] {
+    --em-fundo-primario: #0F172A;
+    --em-azul-profundo: #F1F5F9;          /* texto primário no escuro */
+    --em-sucesso: #10B981;
+    --em-perigo: #F87171;
+    --em-aviso: #FBBF24;
+    --em-info: #60A5FA;
+    --em-texto-secundario: #CBD5E1;
+    --em-borda: #1E293B;
+    --em-desabilitado: #64748B;
+    --em-branco: #1E293B;                 /* superfícies secundárias no escuro */
+    --em-azul-primario-btn: #60A5FA;      /* botão primário no escuro */
+
+    --em-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --em-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --em-shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.5);
+
+    --bs-primary: var(--em-azul-primario-btn);
+    --bs-primary-rgb: 96, 165, 250;
+    --bs-body-bg: var(--em-fundo-primario);
+    --bs-body-color: var(--em-azul-profundo);
+    --bs-border-color: var(--em-borda);
+}
+
+/* ----------------------------------------------------------------------------
+   3. BASE
+   ---------------------------------------------------------------------------- */
+body {
+    font-family: var(--em-font-family);
+    font-size: var(--em-font-size-base);
+    line-height: var(--em-line-height);
+    background-color: var(--em-fundo-primario);
+    color: var(--em-azul-profundo);
+    transition: background-color var(--em-transition-normal), color var(--em-transition-normal);
+}
+
+/* Tipografia */
+h1, .h1 { font-size: var(--em-h1-size); font-weight: 700; }
+h2, .h2 { font-size: var(--em-h2-size); font-weight: 600; }
+h3, .h3 { font-size: var(--em-h3-size); font-weight: 600; }
+h4, .h4 { font-size: var(--em-h4-size); font-weight: 600; }
+h5, .h5 { font-size: var(--em-h5-size); font-weight: 600; }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--em-azul-profundo);
+    letter-spacing: -0.02em;
+}
+
+.text-muted, .text-secondary {
+    color: var(--em-texto-secundario) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   4. CARDS
+   ---------------------------------------------------------------------------- */
+.card {
+    background-color: var(--em-branco);
+    border: 1px solid var(--em-borda);
+    border-radius: var(--em-radius-lg);
+    box-shadow: var(--em-shadow-md);
+    transition: box-shadow var(--em-transition-normal), transform var(--em-transition-normal);
+}
+
+[data-theme="dark"] .card {
+    background-color: #1E293B;
+    border-color: var(--em-borda);
+}
+
+.card:hover {
+    box-shadow: var(--em-shadow-lg);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+   5. BOTÕES (8 variações do manual)
+   ---------------------------------------------------------------------------- */
+.btn {
+    font-family: var(--em-font-family);
+    font-weight: 500;
+    border-radius: var(--em-radius-md);
+    padding: 0.5rem 1.25rem;
+    transition: all var(--em-transition-fast);
+    border: 1px solid transparent;
+}
+
+.btn:hover { transform: translateY(-1px); box-shadow: var(--em-shadow-sm); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 2px solid var(--em-info); outline-offset: 2px; }
+
+/* Variações */
+.btn-primary {
+    background-color: var(--em-azul-profundo);
+    border-color: var(--em-azul-profundo);
+    color: var(--em-branco);
+}
+[data-theme="dark"] .btn-primary {
+    background-color: var(--em-azul-primario-btn);
+    border-color: var(--em-azul-primario-btn);
+    color: #0F172A;
+}
+
+.btn-success { background-color: var(--em-sucesso); border-color: var(--em-sucesso); color: #FFFFFF; }
+.btn-danger  { background-color: var(--em-perigo); border-color: var(--em-perigo); color: #FFFFFF; }
+.btn-warning { background-color: var(--em-aviso); border-color: var(--em-aviso); color: var(--em-azul-profundo); }
+.btn-info    { background-color: var(--em-info); border-color: var(--em-info); color: #FFFFFF; }
+
+/* Secundário: outline */
+.btn-outline-primary, .btn-secondary {
+    background-color: transparent;
+    border-color: var(--em-azul-profundo);
+    color: var(--em-azul-profundo);
+}
+[data-theme="dark"] .btn-outline-primary,
+[data-theme="dark"] .btn-secondary {
+    border-color: var(--em-azul-profundo);
+    color: var(--em-azul-profundo);
+}
+
+/* Ghost: sem fundo, só texto com borda sutil */
+.btn-ghost {
+    background-color: transparent;
+    border: 1px solid var(--em-borda);
+    color: var(--em-azul-profundo);
+}
+
+/* Tamanhos */
+.btn-sm { padding: 0.35rem 0.9rem; font-size: var(--em-font-size-sm); }
+.btn-lg { padding: 0.75rem 1.75rem; font-size: 18px; }
+
+.btn:disabled, .btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   6. NAVBAR
+   ---------------------------------------------------------------------------- */
+.navbar {
+    background-color: var(--em-azul-profundo) !important;
+    box-shadow: var(--em-shadow-md);
+    padding: 0.875rem 0;
+}
+[data-theme="dark"] .navbar {
+    background-color: #1E293B !important;
+    border-bottom: 1px solid var(--em-borda);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 20px;
+    color: #FFFFFF !important;
+    letter-spacing: -0.01em;
+}
+
+/* ----------------------------------------------------------------------------
+   7. BADGES SEMÂNTICAS (prioridades do edital)
+   ---------------------------------------------------------------------------- */
+.badge {
+    font-family: var(--em-font-family);
+    font-weight: 500;
+    padding: 0.35em 0.75em;
+    border-radius: var(--em-radius-sm);
+    font-size: var(--em-font-size-xs);
+}
+
+.badge-prioridade-alta  { background-color: var(--em-perigo); color: #FFFFFF; }
+.badge-prioridade-media { background-color: var(--em-aviso); color: var(--em-azul-profundo); }
+.badge-prioridade-baixa { background-color: var(--em-desabilitado); color: var(--em-azul-profundo); }
+
+/* ----------------------------------------------------------------------------
+   8. ALERTS
+   ---------------------------------------------------------------------------- */
+.alert {
+    border-radius: var(--em-radius-md);
+    border: 1px solid transparent;
+    padding: 1rem 1.25rem;
+}
+.alert-success { background-color: rgba(34, 197, 94, 0.1); border-color: var(--em-sucesso); color: var(--em-sucesso); }
+.alert-danger  { background-color: rgba(239, 68, 68, 0.1); border-color: var(--em-perigo);  color: var(--em-perigo); }
+.alert-warning { background-color: rgba(251, 191, 36, 0.15); border-color: var(--em-aviso); color: var(--em-azul-profundo); }
+.alert-info    { background-color: rgba(59, 130, 246, 0.1); border-color: var(--em-info);  color: var(--em-info); }
+
+/* ----------------------------------------------------------------------------
+   9. FORMS
+   ---------------------------------------------------------------------------- */
+.form-control, .form-select {
+    font-family: var(--em-font-family);
+    border: 1px solid var(--em-borda);
+    border-radius: var(--em-radius-md);
+    padding: 0.5rem 0.75rem;
+    background-color: var(--em-branco);
+    color: var(--em-azul-profundo);
+    transition: border-color var(--em-transition-fast), box-shadow var(--em-transition-fast);
+}
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: #1E293B;
+    color: var(--em-azul-profundo);
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--em-info);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--em-azul-profundo);
+    font-size: var(--em-font-size-sm);
+    margin-bottom: 0.35rem;
+}
+
+/* ----------------------------------------------------------------------------
+   10. TABELAS
+   ---------------------------------------------------------------------------- */
+.table {
+    color: var(--em-azul-profundo);
+    border-color: var(--em-borda);
+}
+.table thead th {
+    background-color: var(--em-fundo-primario);
+    color: var(--em-texto-secundario);
+    font-weight: 600;
+    font-size: var(--em-font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid var(--em-borda);
+}
+[data-theme="dark"] .table {
+    color: var(--em-azul-profundo);
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--em-azul-profundo);
+}
+
+/* ----------------------------------------------------------------------------
+   11. TOGGLE DE TEMA (sol/lua no header)
+   ---------------------------------------------------------------------------- */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #FFFFFF;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--em-radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--em-transition-fast);
+    font-size: 18px;
+}
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+.theme-toggle .icon-sun  { display: none; }
+.theme-toggle .icon-moon { display: inline; }
+[data-theme="dark"] .theme-toggle .icon-sun  { display: inline; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+/* ----------------------------------------------------------------------------
+   12. UTILITÁRIOS
+   ---------------------------------------------------------------------------- */
+.bg-elevamind    { background-color: var(--em-azul-profundo) !important; color: var(--em-branco); }
+.text-elevamind  { color: var(--em-azul-profundo) !important; }
+.border-elevamind { border-color: var(--em-azul-profundo) !important; }
+
+/* Skeleton loader (para estado de carregamento da IA) */
+.skeleton {
+    background: linear-gradient(90deg, var(--em-borda) 25%, var(--em-desabilitado) 50%, var(--em-borda) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: var(--em-radius-sm);
+}
+@keyframes skeleton-loading {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ----------------------------------------------------------------------------
+   13. RESPONSIVIDADE
+   ---------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    :root {
+        --em-h1-size: 32px;
+        --em-h2-size: 26px;
+        --em-h3-size: 22px;
+    }
+    .card-body { padding: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

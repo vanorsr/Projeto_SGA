@@ -124,57 +124,74 @@ def registrar_estudo(request):
     return JsonResponse({'status': 'erro', 'mensagem': 'Método inválido'}, status=400)
 
 def gerar_conteudo_topico(request, id_topico):
-    if request.method == "POST":
-        try:
-            topico = get_object_or_404(TblTopicosMaster, id_topico=id_topico)
-            
-            contexto_ia = f"Matéria: {topico.id_materia_fk} > "
-            if topico.nivel_3: contexto_ia += f"{topico.nivel_3} > "
-            if topico.nivel_4: contexto_ia += f"{topico.nivel_4} > "
-            contexto_ia += f"Assunto: {topico.topico}"
-            
-            conteudo = gerar_conteudo_ia(contexto_ia)
-            
-            if conteudo:
-                # 1. Salva a Tríade e o Aprofundamento (O que você já tinha)
-                topico.o_que_e = conteudo.get('o_que_e')
-                topico.para_que_serve = conteudo.get('para_que_serve')
-                topico.como_funciona = conteudo.get('como_funciona')
-                topico.resumo_curto = conteudo.get('resumo_curto')
-                topico.save()
-
-                # 2. NOVO: Salva as Questões do Simulado 🚀
-                # Primeiro, removemos questões antigas para não acumular lixo
-                Questao.objects.filter(topico=topico).delete()
-
-                # Pegamos a lista de questões do JSON da IA
-                lista_questoes = conteudo.get('questoes', [])
-                
-                for q in lista_questoes:
-                    # REDE DE PROTEÇÃO: Se a IA não enviar a chave, usamos um texto padrão 
-                    # para evitar o erro de NULL no SQL Server.
-                    Questao.objects.create(
-                        topico=topico,
-                        enunciado=q.get('enunciado') or "Enunciado não gerado pela IA",
-                        opcao_a=q.get('a') or q.get('opcao_a') or "Opção A não disponível",
-                        opcao_b=q.get('b') or q.get('opcao_b') or "Opção B não disponível",
-                        opcao_c=q.get('c') or q.get('opcao_c') or "Opção C não disponível",
-                        opcao_d=q.get('d') or q.get('opcao_d') or "Opção D não disponível",
-                        opcao_e=q.get('e') or q.get('opcao_e') or "Opção E não disponível",
-                        alternativa_correta=q.get('correta') or q.get('alternativa_correta') or "A",
-                        justificativa=q.get('justificativa') or "Sem justificativa disponível."
-                    )
-                
-                print(f"✅ Tópico {id_topico} e Simulado salvos com sucesso!")
-                return JsonResponse({"status": "sucesso", "mensagem": "Conteúdo e questões gerados!"})
-            else:
-                return JsonResponse({"status": "erro", "mensagem": "IA retornou vazio."}, status=500)
-
-        except Exception as e:
-            print(f"❌ Erro ao processar IA ou JSON: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=500)
-            
-    return JsonResponse({"status": "erro", "mensagem": "Método inválido"}, status=400)
+    if request.method != "POST":
+        return JsonResponse({"status": "erro", "mensagem": "Método inválido"}, status=400)
+ 
+    try:
+        topico = get_object_or_404(TblTopicosMaster, id_topico=id_topico)
+ 
+        # Monta o contexto hierárquico do tópico
+        contexto_ia = f"Matéria: {topico.id_materia_fk} > "
+        if topico.nivel_3:
+            contexto_ia += f"{topico.nivel_3} > "
+        if topico.nivel_4:
+            contexto_ia += f"{topico.nivel_4} > "
+        contexto_ia += f"Assunto: {topico.topico}"
+ 
+        resultado = gerar_conteudo_ia(contexto_ia)
+ 
+        # --- TRATAMENTO DE ERRO COM MENSAGEM ESPECÍFICA ---
+        if not resultado["success"]:
+            return JsonResponse(
+                {
+                    "status": "erro",
+                    "codigo_erro": resultado["error_code"],
+                    "mensagem": resultado["error_message"],
+                },
+                status=503 if resultado["error_code"] == "SERVIDOR_SOBRECARREGADO" else 500,
+            )
+ 
+        # --- SUCESSO: salva a tríade, aprofundamento e questões ---
+        conteudo = resultado["data"]
+ 
+        topico.o_que_e = conteudo.get("o_que_e")
+        topico.para_que_serve = conteudo.get("para_que_serve")
+        topico.como_funciona = conteudo.get("como_funciona")
+        topico.resumo_curto = conteudo.get("resumo_curto")
+        topico.save()
+ 
+        # Remove questões antigas e recria com as novas
+        Questao.objects.filter(topico=topico).delete()
+ 
+        for q in conteudo.get("questoes", []):
+            Questao.objects.create(
+                topico=topico,
+                enunciado=q.get("enunciado") or "Enunciado não gerado pela IA",
+                opcao_a=q.get("a") or q.get("opcao_a") or "Opção A não disponível",
+                opcao_b=q.get("b") or q.get("opcao_b") or "Opção B não disponível",
+                opcao_c=q.get("c") or q.get("opcao_c") or "Opção C não disponível",
+                opcao_d=q.get("d") or q.get("opcao_d") or "Opção D não disponível",
+                opcao_e=q.get("e") or q.get("opcao_e") or "Opção E não disponível",
+                alternativa_correta=q.get("correta") or q.get("alternativa_correta") or "A",
+                justificativa=q.get("justificativa") or "Sem justificativa disponível.",
+            )
+ 
+        print(f"✅ Tópico {id_topico} e Simulado salvos com sucesso!")
+        return JsonResponse(
+            {"status": "sucesso", "mensagem": "Conteúdo e questões gerados!"}
+        )
+ 
+    except Exception as e:
+        # Erro inesperado (fora do fluxo da IA — ex: DB, permissões)
+        print(f"❌ Erro inesperado em gerar_conteudo_topico: {str(e)}")
+        return JsonResponse(
+            {
+                "status": "erro",
+                "codigo_erro": "ERRO_INTERNO",
+                "mensagem": "Ocorreu um erro inesperado. Tente novamente.",
+            },
+            status=500,
+        )
 
 def home(request):
     # --- 1. GRÁFICO: HORAS POR MATÉRIA (Mantido) ---
