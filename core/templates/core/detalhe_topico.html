@@ -59,9 +59,9 @@
         </a>
     </div>
 
-    <!-- TRÍADE: O que é / Para que serve / Como funciona -->
+    <!-- TRÍADE: O que é / Para que serve / Como funciona (col-lg-4 → em tablet fica empilhado) -->
     <div class="row mb-4">
-        <div class="col-md-4 d-flex align-items-stretch">
+        <div class="col-lg-4 d-flex align-items-stretch">
             <div class="card triade-card triade-oque-e mb-3 w-100 shadow-sm">
                 <div class="card-header fw-bold">O que é?</div>
                 <div class="card-body">
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 d-flex align-items-stretch">
+        <div class="col-lg-4 d-flex align-items-stretch">
             <div class="card triade-card triade-para-que-serve mb-3 w-100 shadow-sm">
                 <div class="card-header fw-bold">Para que serve?</div>
                 <div class="card-body">
@@ -91,7 +91,7 @@
             </div>
         </div>
 
-        <div class="col-md-4 d-flex align-items-stretch">
+        <div class="col-lg-4 d-flex align-items-stretch">
             <div class="card triade-card triade-como-funciona mb-3 w-100 shadow-sm">
                 <div class="card-header fw-bold">Como funciona?</div>
                 <div class="card-body">
@@ -242,11 +242,12 @@
         <div class="card-body">
             <h6 class="fw-bold mb-3">➕ Adicionar material de apoio</h6>
             <div class="row g-2">
-                <div class="col-md-5">
-                    <input type="text" id="novoMaterialTitulo" class="form-control" placeholder="Título (ex: Aula Professor X sobre Juros)">
-                </div>
                 <div class="col-md-4">
-                    <input type="url" id="novoMaterialLink" class="form-control" placeholder="Link (URL completa)">
+                    <input type="url" id="novoMaterialLink" class="form-control" placeholder="1. Cole o link aqui" onblur="tentarAutoPreencherTitulo()">
+                    <small id="statusAutoTitulo" class="text-muted d-none">🔎 Buscando título do vídeo...</small>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" id="novoMaterialTitulo" class="form-control" placeholder="2. Título (auto-preenche pra vídeos do YouTube)">
                 </div>
                 <div class="col-md-2">
                     <select id="novoMaterialTipo" class="form-select">
@@ -518,6 +519,50 @@
         // ==========================================================
         // MATERIAL DE APOIO — adicionar / remover via AJAX
         // ==========================================================
+
+        // Detecta URL do YouTube e busca o título via oEmbed (API pública, sem chave)
+        function tentarAutoPreencherTitulo() {
+            const linkInput = document.getElementById('novoMaterialLink');
+            const tituloInput = document.getElementById('novoMaterialTitulo');
+            const tipoSelect = document.getElementById('novoMaterialTipo');
+            const statusDiv = document.getElementById('statusAutoTitulo');
+
+            const url = linkInput.value.trim();
+            if (!url) return;
+
+            // Só tenta se for YouTube E o título ainda estiver vazio
+            const ehYoutube = /(?:youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts\/)/i.test(url);
+            if (!ehYoutube) return;
+            if (tituloInput.value.trim() !== '') return;
+
+            // Auto-seleciona tipo "vídeo" pra URL do YouTube
+            tipoSelect.value = 'video';
+
+            statusDiv.classList.remove('d-none');
+            statusDiv.textContent = '🔎 Buscando título do vídeo...';
+
+            const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+
+            fetch(oembedUrl)
+                .then(r => {
+                    if (!r.ok) throw new Error('Vídeo não encontrado ou privado.');
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.title) {
+                        tituloInput.value = data.title;
+                        statusDiv.textContent = '✅ Título preenchido (edite se quiser)';
+                        setTimeout(() => statusDiv.classList.add('d-none'), 2500);
+                    } else {
+                        statusDiv.classList.add('d-none');
+                    }
+                })
+                .catch(() => {
+                    statusDiv.textContent = '⚠️ Não consegui buscar o título. Digite manualmente.';
+                    setTimeout(() => statusDiv.classList.add('d-none'), 3000);
+                });
+        }
+
         function adicionarMaterial() {
             const titulo = document.getElementById('novoMaterialTitulo').value.trim();
             const link = document.getElementById('novoMaterialLink').value.trim();
