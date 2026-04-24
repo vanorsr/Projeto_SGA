@@ -6,6 +6,7 @@ import markdown
 import re
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
 from django.views.decorators.csrf import csrf_exempt
@@ -24,11 +25,13 @@ from .models import (
 # Importando a função da IA
 from core.ai_utils import gerar_conteudo_ia
 
+@login_required
 def lista_materias(request):
     materiais = TblMaterias.objects.all()
     contexto = {'materias': materiais}
     return render(request, 'core/lista_materias.html', contexto)
 
+@login_required
 def lista_topicos(request, id):
     materia = get_object_or_404(TblMaterias, pk=id)
     topico = TblTopicosMaster.objects.filter(id_materia_fk=id)
@@ -38,6 +41,7 @@ def lista_topicos(request, id):
     }
     return render(request, 'core/lista_topicos.html', contexto)
 
+@login_required
 def detalhe_topico(request, id):
     # Busca o tópico pelo ID
     topico = get_object_or_404(TblTopicosMaster, id_topico=id)
@@ -65,6 +69,7 @@ def detalhe_topico(request, id):
     
     return render(request, 'core/detalhe_topico.html', contexto)
 
+@login_required
 def registrar_estudo(request):
     if request.method == 'POST':
         try:
@@ -123,6 +128,7 @@ def registrar_estudo(request):
             
     return JsonResponse({'status': 'erro', 'mensagem': 'Método inválido'}, status=400)
 
+@login_required
 def gerar_conteudo_topico(request, id_topico):
     if request.method != "POST":
         return JsonResponse({"status": "erro", "mensagem": "Método inválido"}, status=400)
@@ -192,7 +198,7 @@ def gerar_conteudo_topico(request, id_topico):
             },
             status=500,
         )
-
+@login_required
 def home(request):
     # --- 1. GRÁFICO: HORAS POR MATÉRIA (Mantido) ---
     horas_por_materia = TblSessaoEstudo.objects.values(
@@ -291,6 +297,7 @@ def home(request):
     
     return render(request, 'core/home.html', contexto)
 
+@login_required
 @csrf_exempt
 def salvar_resultado_questao(request):
     if request.method == 'POST':
