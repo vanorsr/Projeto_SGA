@@ -3,15 +3,131 @@
 
 {% block conteudo %}
 <div class="container mt-4">
-    
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="text-primary">Painel Gerencial 📊</h2>
-            <p class="text-muted">Visão estratégica da sua aprovação na ALEGO</p>
+            <p class="text-muted">Visão estratégica da sua aprovação no concurso</p>
         </div>
         <a href="{% url 'lista_materias' %}" class="btn btn-primary">📚 Ir para Matérias</a>
     </div>
 
+    <!-- ========================================================== -->
+    <!-- DASHBOARD DE COBERTURA DE PREPARAÇÃO                        -->
+    <!-- ========================================================== -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-primary fw-bold mb-0">📈 Cobertura de Preparação</h5>
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#detalhesCobertura" aria-expanded="false">
+                Ver detalhes por matéria ▼
+            </button>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="card cobertura-card cobertura-ia shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="fw-bold text-uppercase">✨ Conteúdo IA</small>
+                            <small class="cobertura-stat">{{ cobertura_com_ia }}/{{ cobertura_total_topicos }}</small>
+                        </div>
+                        <h3 class="fw-bold mb-2">{{ cobertura_perc_ia }}%</h3>
+                        <div class="progress cobertura-progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ cobertura_perc_ia|stringformat:'.1f' }}%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Tópicos com tríade + aprofundamento</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card cobertura-card cobertura-material shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="fw-bold text-uppercase">🎒 Material de Apoio</small>
+                            <small class="cobertura-stat">{{ cobertura_com_material }}/{{ cobertura_total_topicos }}</small>
+                        </div>
+                        <h3 class="fw-bold mb-2">{{ cobertura_perc_material }}%</h3>
+                        <div class="progress cobertura-progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ cobertura_perc_material|stringformat:'.1f' }}%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Tópicos com vídeos, PDFs ou artigos</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card cobertura-card cobertura-pronto shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="fw-bold text-uppercase">✅ 100% Prontos</small>
+                            <small class="cobertura-stat">{{ cobertura_100_prontos }}/{{ cobertura_total_topicos }}</small>
+                        </div>
+                        <h3 class="fw-bold mb-2">{{ cobertura_perc_prontos }}%</h3>
+                        <div class="progress cobertura-progress">
+                            <div class="progress-bar" role="progressbar" style="width: {{ cobertura_perc_prontos|stringformat:'.1f' }}%"></div>
+                        </div>
+                        <small class="text-muted d-block mt-2">Tópicos com IA + pelo menos 1 material</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela detalhada colapsável -->
+        <div class="collapse" id="detalhesCobertura">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-cobertura mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Matéria</th>
+                                    <th class="text-center">Tópicos</th>
+                                    <th>IA</th>
+                                    <th>Material</th>
+                                    <th>Ação Sugerida</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in cobertura_por_materia %}
+                                <tr class="urgencia-{{ m.urgencia }}">
+                                    <td class="fw-bold">
+                                        <a href="{% url 'lista_topicos' m.id %}" class="text-decoration-none">
+                                            {{ m.nome }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">{{ m.total }}</td>
+                                    <td style="min-width: 140px;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <small class="text-nowrap">{{ m.com_ia }}/{{ m.total }}</small>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar bg-info" style="width: {{ m.perc_ia|stringformat:'.0f' }}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="min-width: 140px;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <small class="text-nowrap">{{ m.com_material }}/{{ m.total }}</small>
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar bg-success" style="width: {{ m.perc_material|stringformat:'.0f' }}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="small">{{ m.acao }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /DASHBOARD DE COBERTURA -->
+
+    <!-- ========================================================== -->
+    <!-- CARDS DE TOTAIS (existentes)                                 -->
+    <!-- ========================================================== -->
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card border-left-primary shadow-sm h-100 py-2">
@@ -67,6 +183,9 @@
         </div>
     </div>
 
+    <!-- ========================================================== -->
+    <!-- GRÁFICOS (existentes)                                        -->
+    <!-- ========================================================== -->
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card shadow mb-4">
@@ -133,40 +252,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
-
-    // Configuração Única para todos os rótulos de roscas (Donuts)
     const estiloRotulosGlobal = {
-        color: '#ffffff',      // Branco para contraste máximo
+        color: '#ffffff',
         font: {
-            family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+            family: "'Poppins', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
             weight: 'bold',
-            size: 16           // Aumentamos um pouco para melhorar a legibilidade
+            size: 16
         },
         formatter: (value) => {
-            return value > 0 ? value : null; // Oculta zeros para não poluir
+            return value > 0 ? value : null;
         },
-        // Sombra para garantir leitura mesmo em cores claras
         textShadowColor: 'rgba(0, 0, 0, 0.5)',
         textShadowBlur: 3
     };
 
     Chart.register(ChartDataLabels);
-
-    const configDatalabels = {
-        color: '#fff', // Cor branca para contraste
-        font: {
-            weight: 'bold',
-            size: 14
-        },
-        formatter: (value, ctx) => {
-            // Só mostra o número se ele for maior que zero
-            return value > 0 ? value : null;
-        },
-        // Garante que o número fique centralizado na fatia
-        anchor: 'center',
-        align: 'center',
-        offset: 0
-};
 
     function obterCorPorLabel(label) {
         const l = label.toLowerCase().trim();
@@ -183,7 +283,6 @@
         return labels.map(label => obterCorPorLabel(label));
     }
 
-    // 1. GRÁFICO DE BARRAS
     new Chart(document.getElementById("myBarChart"), {
       type: 'bar',
       data: {
@@ -202,9 +301,7 @@
       }
     });
 
-    // 2. GRÁFICO DE STATUS (PADRONIZADO)
     const labelsStatus = {{ chart_status_labels|safe }};
-
     new Chart(document.getElementById("chartStatus"), {
         type: 'doughnut',
         data: {
@@ -212,27 +309,21 @@
             datasets: [{
                 data: {{ chart_status_data|safe }},
                 backgroundColor: gerarPaleta(labelsStatus),
-                borderWidth: 2,           // Adicionado para padronizar com o de simulados
-                borderColor: '#ffffff'    // Adicionado para padronizar com o de simulados
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }],
         },
-        options: { 
-            maintainAspectRatio: false, 
-            cutout: '60%', // Ajustado para 60% para que a rosca tenha a mesma espessura das outras
-            plugins: { 
-                legend: { 
-                    position: 'bottom', 
-                    labels: { usePointStyle: true, padding: 20 } 
-                },
-                // AQUI ESTÁ A MÁGICA: A variável global que ajusta a fonte de uma vez só
-                datalabels: estiloRotulosGlobal 
-            } 
+        options: {
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                datalabels: estiloRotulosGlobal
+            }
         }
     });
 
-    // 3. GRÁFICO DE CONHECIMENTO (PADRONIZADO)
     const labelsConhecimento = {{ chart_conhecimento_labels|safe }};
-
     new Chart(document.getElementById("chartConhecimento"), {
         type: 'doughnut',
         data: {
@@ -240,25 +331,20 @@
             datasets: [{
                 data: {{ chart_conhecimento_data|safe }},
                 backgroundColor: gerarPaleta(labelsConhecimento),
-                borderWidth: 2,           // Padronização de borda
-                borderColor: '#ffffff'    // Padronização de borda
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }],
         },
-        options: { 
-            maintainAspectRatio: false, 
-            cutout: '60%', // Ajustado para manter a mesma espessura dos demais
-            plugins: { 
-                legend: { 
-                    position: 'bottom', 
-                    labels: { usePointStyle: true, padding: 20 } 
-                },
-                // Aplicando a variável de estilo centralizada
-                datalabels: estiloRotulosGlobal 
-            } 
+        options: {
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                datalabels: estiloRotulosGlobal
+            }
         }
     });
 
-    // 4. GRÁFICO DE SIMULADO (PADRONIZADO COM VARIÁVEL GLOBAL)
     new Chart(document.getElementById("chartSimulado"), {
         type: 'doughnut',
         data: {
@@ -272,31 +358,93 @@
         },
         options: {
             maintainAspectRatio: false,
-            cutout: '60%', // Padronizado com Status e Conhecimento
+            cutout: '60%',
             plugins: {
-                legend: { 
-                    position: 'bottom', 
-                    labels: { usePointStyle: true, padding: 20 } 
-                },
-                // Aplicando a variável de estilo centralizada
-                datalabels: estiloRotulosGlobal 
+                legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                datalabels: estiloRotulosGlobal
             }
         }
     });
-    
 </script>
 
 <style>
-    /* Altura fixa para os containers de gráfico para garantir alinhamento horizontal */
+    /* Altura fixa para os containers de gráfico */
     .chart-bar { position: relative; height: 20rem; width: 100%; }
-    .chart-pie { position: relative; height: 16rem; width: 100%; } /* Ajustado para 16rem */
-    
-    /* Cores das bordas laterais (opcional, para manter o padrão dos cards superiores) */
+    .chart-pie { position: relative; height: 16rem; width: 100%; }
+
+    /* Cores das bordas laterais dos cards */
     .border-left-primary { border-left: .25rem solid #4e73df!important; }
     .border-left-success { border-left: .25rem solid #1cc88a!important; }
-    .border-left-info { border-left: .25rem solid #36b9cc!important; }
+    .border-left-info    { border-left: .25rem solid #36b9cc!important; }
 
-    /* Força os cards da mesma linha a terem a mesma altura */
+    /* ========== Dashboard de Cobertura ========== */
+    .cobertura-card {
+        background-color: var(--em-superficie);
+        border: 1px solid var(--em-borda);
+        transition: transform 0.2s;
+    }
+    .cobertura-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--em-shadow-lg);
+    }
+    .cobertura-ia .progress-bar       { background-color: var(--em-info); }
+    .cobertura-material .progress-bar { background-color: var(--em-sucesso); }
+    .cobertura-pronto .progress-bar   { background-color: var(--em-titulo); }
+
+    .cobertura-progress {
+        height: 8px;
+        background-color: var(--em-borda);
+    }
+    .cobertura-stat {
+        color: var(--em-texto-secundario);
+        font-weight: 600;
+    }
+
+    /* Tabela de cobertura */
+    .table-cobertura {
+        color: var(--em-texto-primario);
+        margin: 0;
+    }
+    .table-cobertura th {
+        background-color: var(--em-superficie-elevada);
+        color: var(--em-texto-secundario);
+        font-size: 0.80rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+        border-bottom: 2px solid var(--em-borda);
+    }
+    .table-cobertura td {
+        border-color: var(--em-borda);
+        vertical-align: middle;
+        color: var(--em-texto-primario);
+    }
+    .table-cobertura a {
+        color: var(--em-texto-primario);
+    }
+    .table-cobertura a:hover {
+        color: var(--em-titulo);
+    }
+
+    /* Destaque visual por urgência */
+    .table-cobertura tr.urgencia-alta td {
+        background-color: rgba(239, 68, 68, 0.08);
+        border-left: 3px solid var(--em-perigo);
+    }
+    .table-cobertura tr.urgencia-media td {
+        background-color: rgba(251, 191, 36, 0.08);
+        border-left: 3px solid var(--em-aviso);
+    }
+    .table-cobertura tr.urgencia-baixa td {
+        background-color: rgba(59, 130, 246, 0.05);
+        border-left: 3px solid var(--em-info);
+    }
+    .table-cobertura tr.urgencia-ok td {
+        background-color: rgba(34, 197, 94, 0.05);
+        border-left: 3px solid var(--em-sucesso);
+    }
+
+    /* Layout das rows */
     .row { display: flex; flex-wrap: wrap; }
     .row > [class*='col-'] { display: flex; flex-direction: column; }
     .row > [class*='col-'] .card { flex: 1 0 auto; }
