@@ -1,5 +1,6 @@
 import markdown # Certifique-se de ter o 'markdown' instalado no venv
 from django.db import models
+from django.conf import settings
 from django.utils.safestring import mark_safe
 
 # =======================================================
@@ -15,7 +16,7 @@ class TblConcursos(models.Model):
     ano = models.IntegerField(db_column='Ano', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Concursos'
         verbose_name = 'Concurso'
         verbose_name_plural = 'Concursos'
@@ -30,7 +31,7 @@ class TblMaterias(models.Model):
     tipo_conhecimento = models.CharField(db_column='Tipo_Conhecimento', max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Materias'
         verbose_name = 'Matéria'
         verbose_name_plural = 'Matérias'
@@ -46,9 +47,10 @@ class TblStatusEstudo(models.Model):
     status = models.CharField(db_column='Status', max_length=255, blank=True, null=True)
     nivel_confianca = models.CharField(db_column='Nivel_Confianca', max_length=255, blank=True, null=True)
     data_ultima_revisao = models.DateTimeField(db_column='Data_Ultima_Revisao', blank=True, null=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Status_Estudo'
         verbose_name = 'Status do Estudo'
 
@@ -67,7 +69,7 @@ class TblTopicosMaster(models.Model):
     conteudo_mestre = models.TextField(db_column='CONTEUDO_MESTRE', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Topicos_Master'
         verbose_name = 'Tópico'
         verbose_name_plural = 'Tópicos Master'
@@ -112,7 +114,7 @@ class TblEditalLink(models.Model):
     ssma_timestamp = models.TextField(db_column='SSMA_TimeStamp', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Edital_Link'
 
 
@@ -126,7 +128,7 @@ class TblMaterialApoio(models.Model):
     ssma_timestamp = models.TextField(db_column='SSMA_TimeStamp', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Material_Apoio'
 
 class TblSessaoEstudo(models.Model):
@@ -144,9 +146,10 @@ class TblSessaoEstudo(models.Model):
     # Campos novos que criamos via script
     qtd_questoes = models.IntegerField(db_column='Qtd_Questoes', blank=True, null=True)
     qtd_erros = models.IntegerField(db_column='Qtd_Erros', blank=True, null=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tbl_Sessao_Estudo'
         verbose_name = 'Sessão de Estudo'
         verbose_name_plural = 'Sessões de Estudo'
@@ -160,10 +163,11 @@ class TblHistoricoEstudo(models.Model):
     id_topico_fk = models.ForeignKey(TblTopicosMaster, on_delete=models.CASCADE, db_column='id_topico_fk')
     data_estudo = models.DateTimeField(auto_now_add=True)
     tempo_segundos = models.IntegerField()
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     
     class Meta:
-        db_table = 'tbl_Sessao_Estudo' # Verifique se esta tabela no SQL Server é a mesma de TblSessaoEstudo
-        managed = False
+        db_table = 'tbl_Historico_Estudo' 
+        managed = True
         verbose_name = 'Histórico de Estudo'
         verbose_name_plural = 'Histórico de Estudos'
 
@@ -200,6 +204,7 @@ class ResultadoQuestao(models.Model):
     # Dados da performance
     foi_acerto = models.BooleanField() # True para acerto, False para erro
     data_resposta = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         db_table = 'tbl_Resultados_Questoes' # Nome da tabela no SQL Server

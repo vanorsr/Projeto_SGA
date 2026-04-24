@@ -75,16 +75,8 @@ WSGI_APPLICATION = "setup.wsgi.application"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'SGA_SQL',  # O nome exato do banco que criamos
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': r'.\SQLEXPRESS', # O 'r' antes das aspas ajuda com a barra invertida
-        'PORT': '',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'extra_params': 'Trusted_Connection=yes;TrustServerCertificate=yes',
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

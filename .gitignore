@@ -1,5 +1,15 @@
+# Ambiente virtual
 venv/
+
+# Python
 __pycache__/
 *.pyc
+
+# Variáveis de ambiente (segredos)
 .env
-db.sqlite3  # Se usar o sqlite local para testes
+
+# Banco SQLite local
+db.sqlite3
+
+# VS Code (opcional, evita subir configurações pessoais)
+.vscode/
