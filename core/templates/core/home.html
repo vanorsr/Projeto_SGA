@@ -4,12 +4,12 @@
 {% block conteudo %}
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3 cabecalho-painel">
         <div>
             <h2 class="text-primary mb-1">Painel Gerencial 📊</h2>
             <p class="text-muted mb-0">Visão estratégica da sua aprovação no concurso</p>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="d-flex align-items-end gap-2 flex-wrap">
             <!-- Dropdown de seleção de concurso -->
             <div class="concurso-selector">
                 <label for="concursoSelect" class="form-label small fw-bold mb-1">🎯 Concurso:</label>
@@ -22,8 +22,20 @@
                         {{ c.nome_concurso }}
                     </option>
                     {% endfor %}
-                </select>            </div>
-            <a href="{% url 'lista_materias' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-primary btn-sm">📚 Ir para Matérias</a>
+                </select>
+            </div>
+            <a href="{% url 'lista_materias' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-primary btn-sm btn-ir-materias">📚 Ir para Matérias</a>
+        </div>
+    </div>
+
+    <!-- Overlay de "Atualizando concurso selecionado" -->
+    <div id="overlayAtualizando" class="overlay-atualizando d-none">
+        <div class="overlay-conteudo">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <h5 class="overlay-titulo">Atualizando concurso selecionado</h5>
+            <p class="overlay-subtitulo mb-0">Aguarde...</p>
         </div>
     </div>
 
@@ -110,7 +122,7 @@
                                 {% for m in cobertura_por_materia %}
                                 <tr class="urgencia-{{ m.urgencia }}">
                                     <td class="fw-bold">
-                                        <a href="{% url 'lista_topicos' m.id %}" class="text-decoration-none">
+                                        <a href="{% url 'lista_topicos' m.id %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="text-decoration-none">
                                             {{ m.nome }}
                                         </a>
                                     </td>
@@ -283,7 +295,11 @@
     // FILTRO DE CONCURSO — recarrega a página com query string
     // ==========================================================
     function trocarConcurso(idConcurso) {
-        // Recarrega a home com o filtro aplicado via query string
+        // Mostra overlay de "atualizando"
+        const overlay = document.getElementById('overlayAtualizando');
+        if (overlay) overlay.classList.remove('d-none');
+
+        // Recarrega a home com o filtro aplicado
         const url = new URL(window.location.href);
         if (idConcurso === 'todos') {
             url.searchParams.delete('concurso');
@@ -343,7 +359,18 @@
       options: {
         indexAxis: 'y',
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, datalabels: { display: true } }
+        layout: {
+            padding: { right: 60 }  // <- espaço extra pra rótulo "0.X h" não ser cortado
+        },
+        plugins: {
+            legend: { display: false },
+            datalabels: { display: true }
+        },
+        scales: {
+            x: {
+                grace: '15%'  // <- 15% extra no eixo X pra rótulo respirar
+            }
+        }
       }
     });
 
@@ -423,9 +450,14 @@
     .border-left-success { border-left: .25rem solid #1cc88a!important; }
     .border-left-info    { border-left: .25rem solid #36b9cc!important; }
 
+    /* ========== Cabeçalho do painel ========== */
+    .cabecalho-painel {
+        align-items: flex-end;
+    }
+
     /* ========== Dropdown de concurso ========== */
     .concurso-selector {
-        min-width: 220px;
+        min-width: 320px;  /* <- aumentado pra caber "Banco do Brasil 2026 - Escriturário Agente Comercial" */
     }
     .concurso-selector .form-select {
         background-color: var(--em-superficie);
@@ -436,6 +468,45 @@
     .concurso-selector .form-select:focus {
         border-color: var(--em-info);
         box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
+
+    /* Botão "Ir para Matérias" alinhado com o dropdown */
+    .btn-ir-materias {
+        height: 31px;  /* <- mesma altura do form-select-sm pra alinhar */
+        display: flex;
+        align-items: center;
+    }
+
+    /* ========== Overlay "Atualizando..." ========== */
+    .overlay-atualizando {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(9, 47, 89, 0.7);
+        backdrop-filter: blur(3px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .overlay-conteudo {
+        background-color: var(--em-superficie);
+        border-radius: var(--em-radius-lg);
+        padding: 2rem 3rem;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        min-width: 280px;
+    }
+    .overlay-titulo {
+        color: var(--em-titulo);
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    .overlay-subtitulo {
+        color: var(--em-texto-secundario);
+        font-size: 0.9rem;
     }
 
     /* ========== Dashboard de Cobertura ========== */
