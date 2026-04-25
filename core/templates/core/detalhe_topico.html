@@ -68,11 +68,11 @@
         </a>
     </div>
 
-    <!-- TRÍADE: O que é / Para que serve / Como funciona (col-lg-4 → em tablet fica empilhado) -->
+    <!-- TRÍADE: Entenda / Por que importa / Como aplicar -->
     <div class="row mb-4">
         <div class="col-lg-4 d-flex align-items-stretch">
-            <div class="card triade-card triade-oque-e mb-3 w-100 shadow-sm">
-                <div class="card-header fw-bold">O que é?</div>
+            <div class="card triade-card triade-entenda mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">🧠 Entenda</div>
                 <div class="card-body">
                     <div class="card-text">
                         {% if topico.o_que_e_html %}
@@ -86,8 +86,8 @@
         </div>
 
         <div class="col-lg-4 d-flex align-items-stretch">
-            <div class="card triade-card triade-para-que-serve mb-3 w-100 shadow-sm">
-                <div class="card-header fw-bold">Para que serve?</div>
+            <div class="card triade-card triade-importa mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">📌 Por que importa</div>
                 <div class="card-body">
                     <div class="card-text">
                         {% if topico.para_que_serve_html %}
@@ -101,8 +101,8 @@
         </div>
 
         <div class="col-lg-4 d-flex align-items-stretch">
-            <div class="card triade-card triade-como-funciona mb-3 w-100 shadow-sm">
-                <div class="card-header fw-bold">Como funciona?</div>
+            <div class="card triade-card triade-aplicar mb-3 w-100 shadow-sm">
+                <div class="card-header fw-bold">🛠️ Como aplicar</div>
                 <div class="card-body">
                     <div class="card-text">
                         {% if topico.como_funciona_html %}
@@ -673,16 +673,17 @@
             color: #FFFFFF !important;
         }
 
-        /* Tríade de cards */
+        /* Tríade de cards: Entenda / Por que importa / Como aplicar */
         .triade-card { border: 0; }
-        .triade-oque-e { background-color: #3B82F6 !important; color: #FFFFFF !important; }
-        .triade-oque-e * { color: #FFFFFF !important; }
 
-        .triade-para-que-serve { background-color: #22C55E !important; color: #FFFFFF !important; }
-        .triade-para-que-serve * { color: #FFFFFF !important; }
+        .triade-entenda { background-color: #3B82F6 !important; color: #FFFFFF !important; }
+        .triade-entenda * { color: #FFFFFF !important; }
 
-        .triade-como-funciona { background-color: #FBBF24 !important; color: #092F59 !important; }
-        .triade-como-funciona * { color: #092F59 !important; }
+        .triade-importa { background-color: #22C55E !important; color: #FFFFFF !important; }
+        .triade-importa * { color: #FFFFFF !important; }
+
+        .triade-aplicar { background-color: #FBBF24 !important; color: #092F59 !important; }
+        .triade-aplicar * { color: #092F59 !important; }
 
         /* Aprofundamento Teórico */
         .aprofundamento-card {

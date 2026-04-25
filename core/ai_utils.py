@@ -25,6 +25,10 @@ BACKOFF_INICIAL = 2         # segundos — dobra a cada tentativa (2s, 4s, 8s)
 
 # ============================================================================
 # PROMPT PEDAGÓGICO (compartilhado entre providers)
+# Estrutura: tríade Feynman (Entenda / Por que importa / Como aplicar)
+# Os nomes dos campos JSON (o_que_e, para_que_serve, como_funciona) são
+# identificadores TÉCNICOS do banco — não aparecem na interface. O conteúdo
+# que cada um abriga é instruído explicitamente abaixo.
 # ============================================================================
 def _montar_prompt(texto_contexto):
     return f"""
@@ -35,28 +39,49 @@ REGRAS GERAIS:
 - Proibido saudações ou introduções informais.
 - PROIBIDO O USO DE LATEX.
 
+ESTRUTURA PEDAGÓGICA (TRÍADE FEYNMAN):
+O conteúdo deve seguir o método de aprendizagem ativa de Feynman, organizado em três camadas progressivas. CADA CAMPO TEM UMA FUNÇÃO PEDAGÓGICA ESPECÍFICA — siga rigorosamente:
+
+1. Campo "o_que_e" — RÓTULO PEDAGÓGICO: "Entenda"
+   - Explique o conceito de forma CLARA e DIRETA, como se o aluno estivesse vendo o assunto pela primeira vez.
+   - Foco em: definição, natureza do conceito, "o que é em essência".
+   - Linguagem acessível, evitando jargão sem explicação.
+   - 2 a 4 frases.
+
+2. Campo "para_que_serve" — RÓTULO PEDAGÓGICO: "Por que importa"
+   - Explique a RELEVÂNCIA do conceito para o concurseiro e para a vida prática.
+   - Foco em: por que esse conceito existe, qual problema ele resolve, qual sua importância no contexto da prova e do mundo real.
+   - Conecte com a banca/concurso quando possível: "este tema é frequentemente cobrado porque..."
+   - 2 a 4 frases.
+
+3. Campo "como_funciona" — RÓTULO PEDAGÓGICO: "Como aplicar"
+   - Explique o MECANISMO PRÁTICO: como o conceito opera, como é usado, regras de aplicação, passos.
+   - Foco em: ação concreta, exemplos de aplicação, "como o aluno vai usar isso".
+   - Quando aplicável, indique uma sequência (passo 1, passo 2...) ou condições de uso.
+   - 2 a 4 frases.
+
 FORMATAÇÃO POR CAMPO:
-1. **o_que_e, para_que_serve, como_funciona (A TRÍADE):**
-   - Use APENAS **negrito** para termos importantes.
-   - PROIBIDO o uso de cores (HTML tags) nestes campos.
+- Nos campos da tríade (o_que_e, para_que_serve, como_funciona):
+  - Use APENAS **negrito** para termos importantes.
+  - PROIBIDO o uso de cores (HTML tags) nestes campos.
 
-2. **resumo_curto (APROFUNDAMENTO TEÓRICO):**
-   - Use **negrito** + Cores HTML para destacar:
-     - VERMELHO (#dc3545): Proibições e Exceções.
-     - AZUL (#0d6efd): Prazos e Competências.
-     - VERDE (#198754): Requisitos e Deveres.
-   - Crie siglas mnemônicas reais para listas, usando <blockquote>.
-   - Mínimo de 5 parágrafos densos.
-   - Use o prefixo "⚠️ **PEGADINHA:**" para alertas de banca.
+- No campo "resumo_curto" (APROFUNDAMENTO TEÓRICO):
+  - Use **negrito** + Cores HTML para destacar:
+    - VERMELHO (#dc3545): Proibições e Exceções.
+    - AZUL (#0d6efd): Prazos e Competências.
+    - VERDE (#198754): Requisitos e Deveres.
+  - Crie siglas mnemônicas reais para listas, usando <blockquote>.
+  - Mínimo de 5 parágrafos densos.
+  - Use o prefixo "⚠️ **PEGADINHA:**" para alertas de banca.
 
-3. **GERAÇÃO DE QUESTÕES (SIMULADO DE ELITE):**
-   - Gere 3 questões de múltipla escolha (A a E) de nível Difícil.
-   - **ESTILO:** Mimetize o estilo de cobrança da banca FGV ou FCC para Analista.
-   - **FONTE:** As questões devem ser baseadas EXCLUSIVAMENTE nos detalhes, prazos e exceções descritos no seu campo 'resumo_curto'.
-   - No campo 'justificativa', explique o erro das alternativas incorretas e confirme a correta.
-   - **REGRA CRÍTICA DE FORMATAÇÃO:** Use APENAS texto puro (plain text) nos campos 'enunciado', 'a', 'b', 'c', 'd', 'e' e 'justificativa'.
-   - É TERMINANTEMENTE PROIBIDO o uso de tags HTML (como <span>, <br>, <b>) ou cores dentro do objeto de questões.
-   - As cores devem aparecer APENAS no campo 'resumo_curto'.
+GERAÇÃO DE QUESTÕES (SIMULADO DE ELITE):
+- Gere 3 questões de múltipla escolha (A a E) de nível Difícil.
+- ESTILO: Mimetize o estilo de cobrança da banca FGV ou FCC para Analista.
+- FONTE: As questões devem ser baseadas EXCLUSIVAMENTE nos detalhes, prazos e exceções descritos no seu campo 'resumo_curto'.
+- No campo 'justificativa', explique o erro das alternativas incorretas e confirme a correta.
+- REGRA CRÍTICA DE FORMATAÇÃO: Use APENAS texto puro (plain text) nos campos 'enunciado', 'a', 'b', 'c', 'd', 'e' e 'justificativa'.
+- É TERMINANTEMENTE PROIBIDO o uso de tags HTML (como <span>, <br>, <b>) ou cores dentro do objeto de questões.
+- As cores devem aparecer APENAS no campo 'resumo_curto'.
 
 Responda ESTRITAMENTE no formato JSON abaixo:
 {{
