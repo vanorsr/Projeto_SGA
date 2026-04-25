@@ -5,20 +5,31 @@
 
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'home' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}">Home</a></li>
         <li class="breadcrumb-item active" aria-current="page">Matérias</li>
       </ol>
     </nav>
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="text-primary fw-bold mb-0">Matérias do Edital</h2>
             <p class="text-muted small mb-0">Selecione uma disciplina para ver os tópicos</p>
         </div>
-        
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+
+        <a href="{% url 'home' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
             📊 <span class="d-none d-md-inline ms-1">Voltar para o Painel</span>
         </a>
+    </div>
+
+    <!-- Indicador de concurso ativo -->
+    <div class="indicador-concurso mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                🎯 <strong>Visualizando:</strong>
+                <span class="text-titulo">{{ concurso_selecionado_nome }}</span>
+            </span>
+            <a href="{% url 'home' %}" class="link-trocar">trocar concurso ↗</a>
+        </div>
     </div>
 
     <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -32,7 +43,7 @@
                     </p>
                 </div>
                 <div class="card-footer bg-transparent border-top-0 text-end">
-                    <a href="{% url 'lista_topicos' materia.id_materia %}" class="btn btn-primary btn-sm stretched-link">
+                    <a href="{% url 'lista_topicos' materia.id_materia %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-primary btn-sm stretched-link">
                         Acessar Tópicos ➔
                     </a>
                 </div>
@@ -41,7 +52,8 @@
         {% empty %}
         <div class="col-12">
             <div class="alert alert-warning text-center">
-                Nenhuma matéria encontrada no banco de dados.
+                Nenhuma matéria encontrada para este concurso.
+                <a href="{% url 'home' %}" class="alert-link ms-2">Voltar ao painel</a> e selecionar outro concurso.
             </div>
         </div>
         {% endfor %}
@@ -55,6 +67,28 @@
     }
     .hover-card:hover {
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+
+    /* Indicador de concurso ativo */
+    .indicador-concurso {
+        background-color: var(--em-superficie-elevada);
+        border-left: 4px solid var(--em-info);
+        border-radius: var(--em-radius-md);
+        padding: 0.75rem 1rem;
+        color: var(--em-texto-primario);
+        font-size: 0.95rem;
+    }
+    .indicador-concurso .text-titulo {
+        color: var(--em-titulo);
+        font-weight: 600;
+    }
+    .indicador-concurso .link-trocar {
+        color: var(--em-info);
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    .indicador-concurso .link-trocar:hover {
+        text-decoration: underline;
     }
 </style>
 

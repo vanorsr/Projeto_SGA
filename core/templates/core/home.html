@@ -4,20 +4,38 @@
 {% block conteudo %}
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="text-primary">Painel Gerencial 📊</h2>
-            <p class="text-muted">Visão estratégica da sua aprovação no concurso</p>
+            <h2 class="text-primary mb-1">Painel Gerencial 📊</h2>
+            <p class="text-muted mb-0">Visão estratégica da sua aprovação no concurso</p>
         </div>
-        <a href="{% url 'lista_materias' %}" class="btn btn-primary">📚 Ir para Matérias</a>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Dropdown de seleção de concurso -->
+            <div class="concurso-selector">
+                <label for="concursoSelect" class="form-label small fw-bold mb-1">🎯 Concurso:</label>
+                <select id="concursoSelect" class="form-select form-select-sm" onchange="trocarConcurso(this.value)">
+                    <option value="todos" {% if concurso_selecionado_id == 'todos' %}selected{% endif %}>
+                        🌐 Todos os concursos
+                    </option>
+                    {% for c in concursos_disponiveis %}
+                    <option value="{{ c.id_concurso }}" {% if concurso_selecionado_id|stringformat:"s" == c.id_concurso|stringformat:"s" %}selected{% endif %}>
+                        {{ c.nome_concurso }}
+                    </option>
+                    {% endfor %}
+                </select>            </div>
+            <a href="{% url 'lista_materias' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-primary btn-sm">📚 Ir para Matérias</a>
+        </div>
     </div>
 
     <!-- ========================================================== -->
     <!-- DASHBOARD DE COBERTURA DE PREPARAÇÃO                        -->
     <!-- ========================================================== -->
     <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="text-primary fw-bold mb-0">📈 Cobertura de Preparação</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="text-primary fw-bold mb-0">
+                📈 Cobertura de Preparação
+                <small class="text-muted fw-normal ms-2">— {{ concurso_selecionado_nome }}</small>
+            </h5>
             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#detalhesCobertura" aria-expanded="false">
                 Ver detalhes por matéria ▼
             </button>
@@ -115,6 +133,12 @@
                                     </td>
                                     <td class="small">{{ m.acao }}</td>
                                 </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        Nenhuma matéria associada ao concurso selecionado.
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -126,7 +150,7 @@
     <!-- /DASHBOARD DE COBERTURA -->
 
     <!-- ========================================================== -->
-    <!-- CARDS DE TOTAIS (existentes)                                 -->
+    <!-- CARDS DE TOTAIS                                              -->
     <!-- ========================================================== -->
     <div class="row mb-4">
         <div class="col-md-4">
@@ -136,6 +160,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tempo Total</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ horas_gerais }}</div>
+                            <small class="text-muted">global, todos concursos</small>
                         </div>
                         <div class="col-auto"><h1 class="text-gray-300">⏱️</h1></div>
                     </div>
@@ -152,6 +177,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 {{ topicos_iniciados }} <span class="text-muted small">de {{ total_topicos }}</span>
                             </div>
+                            <small class="text-muted">{{ concurso_selecionado_nome }}</small>
                         </div>
                         <div class="col-auto"><h1 class="text-gray-300">🚀</h1></div>
                     </div>
@@ -175,6 +201,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <small class="text-muted">{{ concurso_selecionado_nome }}</small>
                         </div>
                         <div class="col-auto"><h1 class="text-gray-300">🎯</h1></div>
                     </div>
@@ -184,13 +211,16 @@
     </div>
 
     <!-- ========================================================== -->
-    <!-- GRÁFICOS (existentes)                                        -->
+    <!-- GRÁFICOS GLOBAIS (não filtrados)                             -->
     <!-- ========================================================== -->
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Qtde de Horas Estudadas (Por Matéria)</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Qtde de Horas Estudadas (Por Matéria)
+                        <small class="text-muted fw-normal ms-2">— global</small>
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-bar">
@@ -247,6 +277,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    // ==========================================================
+    // FILTRO DE CONCURSO — recarrega a página com query string
+    // ==========================================================
+    function trocarConcurso(idConcurso) {
+        // Recarrega a home com o filtro aplicado via query string
+        const url = new URL(window.location.href);
+        if (idConcurso === 'todos') {
+            url.searchParams.delete('concurso');
+        } else {
+            url.searchParams.set('concurso', idConcurso);
+        }
+        window.location.href = url.toString();
+    }
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -376,6 +422,21 @@
     .border-left-primary { border-left: .25rem solid #4e73df!important; }
     .border-left-success { border-left: .25rem solid #1cc88a!important; }
     .border-left-info    { border-left: .25rem solid #36b9cc!important; }
+
+    /* ========== Dropdown de concurso ========== */
+    .concurso-selector {
+        min-width: 220px;
+    }
+    .concurso-selector .form-select {
+        background-color: var(--em-superficie);
+        color: var(--em-texto-primario);
+        border-color: var(--em-borda);
+        font-weight: 500;
+    }
+    .concurso-selector .form-select:focus {
+        border-color: var(--em-info);
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
 
     /* ========== Dashboard de Cobertura ========== */
     .cobertura-card {

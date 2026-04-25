@@ -13,34 +13,100 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import ResultadoQuestao
 from django.views.decorators.http import require_POST
 
-# Importando seus models
 from .models import (
     TblMaterias,
     TblTopicosMaster,
     TblMaterialApoio,
     TblSessaoEstudo,
     TblConcursos,
+    TblEditalLink,
     ResultadoQuestao
 )
 
-# Importando a função da IA
 from core.ai_utils import gerar_conteudo_ia
+
+
+# ============================================================================
+# HELPER: Resolve concurso selecionado a partir do query string
+# ============================================================================
+def _obter_concurso_selecionado(request):
+    """
+    Retorna (concurso_obj, concurso_id_str, concurso_nome) com base no query
+    string ?concurso=X. Se ausente ou inválido, retorna (None, 'todos', 'Todos os concursos').
+    """
+    concurso_id = request.GET.get('concurso')
+
+    if concurso_id and concurso_id != 'todos':
+        try:
+            c = TblConcursos.objects.get(id_concurso=int(concurso_id))
+            return c, str(c.id_concurso), c.nome_concurso
+        except (TblConcursos.DoesNotExist, ValueError):
+            pass
+
+    return None, 'todos', 'Todos os concursos'
+
+
+def _ids_topicos_do_concurso(concurso):
+    """Retorna set de IDs de tópicos vinculados ao concurso (ou None se concurso=None)."""
+    if not concurso:
+        return None  # None significa "sem filtro"
+    return set(
+        TblEditalLink.objects.filter(
+            id_concurso_fk=concurso,
+            esta_no_edital=True,
+        ).values_list('id_topico_fk', flat=True)
+    )
 
 
 @login_required
 def lista_materias(request):
-    materiais = TblMaterias.objects.all()
-    contexto = {'materias': materiais}
+    concurso, concurso_id_str, concurso_nome = _obter_concurso_selecionado(request)
+
+    if concurso:
+        # Filtra: só matérias que têm pelo menos 1 tópico vinculado ao concurso
+        ids_topicos = _ids_topicos_do_concurso(concurso)
+        ids_materias = set(
+            TblTopicosMaster.objects.filter(id_topico__in=ids_topicos).values_list('id_materia_fk', flat=True)
+        )
+        materiais = TblMaterias.objects.filter(id_materia__in=ids_materias)
+    else:
+        materiais = TblMaterias.objects.all()
+
+    # Lista de concursos pra dropdown nas demais telas (caso necessário)
+    concursos_disponiveis = TblConcursos.objects.all().order_by('nome_concurso')
+
+    contexto = {
+        'materias': materiais,
+        'concurso_selecionado_id': concurso_id_str,
+        'concurso_selecionado_nome': concurso_nome,
+        'concursos_disponiveis': concursos_disponiveis,
+    }
     return render(request, 'core/lista_materias.html', contexto)
 
 
 @login_required
 def lista_topicos(request, id):
+    concurso, concurso_id_str, concurso_nome = _obter_concurso_selecionado(request)
     materia = get_object_or_404(TblMaterias, pk=id)
-    topico = TblTopicosMaster.objects.filter(id_materia_fk=id)
+
+    if concurso:
+        # Filtra: só tópicos da matéria que estão no concurso selecionado
+        ids_topicos = _ids_topicos_do_concurso(concurso)
+        topicos = TblTopicosMaster.objects.filter(
+            id_materia_fk=id,
+            id_topico__in=ids_topicos,
+        )
+    else:
+        topicos = TblTopicosMaster.objects.filter(id_materia_fk=id)
+
+    concursos_disponiveis = TblConcursos.objects.all().order_by('nome_concurso')
+
     contexto = {
         'materia': materia,
-        'topicos': topico
+        'topicos': topicos,
+        'concurso_selecionado_id': concurso_id_str,
+        'concurso_selecionado_nome': concurso_nome,
+        'concursos_disponiveis': concursos_disponiveis,
     }
     return render(request, 'core/lista_topicos.html', contexto)
 
@@ -50,7 +116,14 @@ def detalhe_topico(request, id):
     topico = get_object_or_404(TblTopicosMaster, id_topico=id)
     status_atual = TblStatusEstudo.objects.filter(id_topico_fk=topico).first()
 
-    # Materiais de apoio desse tópico
+    # Concursos a que esse tópico pertence (informativo)
+    concursos_do_topico = list(
+        TblConcursos.objects.filter(
+            tbleditallink__id_topico_fk=topico,
+            tbleditallink__esta_no_edital=True,
+        ).distinct().values_list('nome_concurso', flat=True)
+    )
+
     materiais_raw = TblMaterialApoio.objects.filter(id_topico_fk=topico).order_by('-data_criacao')
     materiais = []
     for m in materiais_raw:
@@ -79,6 +152,7 @@ def detalhe_topico(request, id):
         'materiais': materiais,
         'anterior': topico_anterior,
         'proximo': proximo_topico,
+        'concursos_do_topico': concursos_do_topico,
     }
     return render(request, 'core/detalhe_topico.html', contexto)
 
@@ -208,22 +282,37 @@ def gerar_conteudo_topico(request, id_topico):
 @login_required
 def home(request):
     # ========================================================================
-    # DASHBOARD DE COBERTURA DE PREPARAÇÃO
-    # Mede: quantos tópicos têm IA gerada + quantos têm material de apoio
+    # FILTRO DE CONCURSO
     # ========================================================================
-    total_topicos_all = TblTopicosMaster.objects.count()
+    concurso_selecionado, concurso_id_str, concurso_nome = _obter_concurso_selecionado(request)
 
-    topicos_com_ia = TblTopicosMaster.objects.filter(
-        o_que_e__isnull=False
-    ).exclude(o_que_e='').count()
+    concursos_disponiveis = TblConcursos.objects.all().order_by('nome_concurso')
 
-    topicos_com_material = TblMaterialApoio.objects.values('id_topico_fk').distinct().count()
+    # ========================================================================
+    # DASHBOARD DE COBERTURA DE PREPARAÇÃO (FILTRADO POR CONCURSO)
+    # ========================================================================
+    if concurso_selecionado:
+        ids_topicos_concurso = _ids_topicos_do_concurso(concurso_selecionado)
+        topicos_base = TblTopicosMaster.objects.filter(id_topico__in=ids_topicos_concurso)
+    else:
+        topicos_base = TblTopicosMaster.objects.all()
+        ids_topicos_concurso = set(topicos_base.values_list('id_topico', flat=True))
+
+    total_topicos_all = topicos_base.count()
+
+    topicos_com_ia = topicos_base.filter(o_que_e__isnull=False).exclude(o_que_e='').count()
+
+    topicos_com_material = TblMaterialApoio.objects.filter(
+        id_topico_fk__in=ids_topicos_concurso
+    ).values('id_topico_fk').distinct().count()
 
     ids_com_ia = set(
-        TblTopicosMaster.objects.filter(o_que_e__isnull=False).exclude(o_que_e='').values_list('id_topico', flat=True)
+        topicos_base.filter(o_que_e__isnull=False).exclude(o_que_e='').values_list('id_topico', flat=True)
     )
     ids_com_material = set(
-        TblMaterialApoio.objects.values_list('id_topico_fk', flat=True)
+        TblMaterialApoio.objects.filter(
+            id_topico_fk__in=ids_topicos_concurso
+        ).values_list('id_topico_fk', flat=True)
     )
     topicos_100_prontos = len(ids_com_ia & ids_com_material)
 
@@ -231,10 +320,9 @@ def home(request):
     perc_material = round((topicos_com_material / total_topicos_all) * 100, 1) if total_topicos_all else 0
     perc_prontos = round((topicos_100_prontos / total_topicos_all) * 100, 1) if total_topicos_all else 0
 
-    # Detalhamento por matéria com recomendação
     cobertura_por_materia = []
     for materia in TblMaterias.objects.all():
-        topicos_materia = TblTopicosMaster.objects.filter(id_materia_fk=materia)
+        topicos_materia = topicos_base.filter(id_materia_fk=materia)
         total_m = topicos_materia.count()
         if total_m == 0:
             continue
@@ -246,7 +334,6 @@ def home(request):
         perc_ia_m = round((com_ia_m / total_m) * 100, 0) if total_m else 0
         perc_material_m = round((com_material_m / total_m) * 100, 0) if total_m else 0
 
-        # Lógica de recomendação inteligente
         if perc_ia_m < 30:
             acao = "🔥 Gerar conteúdo IA"
             urgencia = "alta"
@@ -278,9 +365,21 @@ def home(request):
     ordem_urgencia = {'alta': 0, 'media': 1, 'baixa': 2, 'ok': 3}
     cobertura_por_materia.sort(key=lambda x: ordem_urgencia[x['urgencia']])
 
-    # ========================================================================
-    # 1. GRÁFICO: HORAS POR MATÉRIA
-    # ========================================================================
+    # Card "Tópicos Iniciados" também filtrado
+    if concurso_selecionado:
+        status_query_filtrado = TblStatusEstudo.objects.filter(
+            id_topico_fk__in=ids_topicos_concurso
+        ).values('status').annotate(qtd=Count('id_status'))
+    else:
+        status_query_filtrado = TblStatusEstudo.objects.values('status').annotate(qtd=Count('id_status'))
+
+    card_topicos_iniciados = 0
+    for item in status_query_filtrado:
+        label = item['status'] or "Não Classificado"
+        if label.strip().lower() != "não iniciado":
+            card_topicos_iniciados += item['qtd']
+
+    # Gráficos globais
     horas_por_materia = TblSessaoEstudo.objects.values(
         nome=F('id_materia_fk__nome_materia')
     ).annotate(
@@ -295,32 +394,15 @@ def home(request):
             labels_horas.append(item['nome'])
             data_horas.append(total_horas)
 
-    # ========================================================================
-    # 2. GRÁFICO: STATUS DO ANDAMENTO
-    # ========================================================================
     status_query = TblStatusEstudo.objects.values('status').annotate(qtd=Count('id_status'))
-
     labels_status = []
     data_status = []
-    card_topicos_iniciados = 0
-
     for item in status_query:
-        label = item['status']
-        if not label:
-            label = "Não Classificado"
-
-        qtd = item['qtd']
+        label = item['status'] or "Não Classificado"
         labels_status.append(label)
-        data_status.append(qtd)
+        data_status.append(item['qtd'])
 
-        if label.strip().lower() != "não iniciado":
-            card_topicos_iniciados += qtd
-
-    # ========================================================================
-    # 3. GRÁFICO: NÍVEL DE CONHECIMENTO
-    # ========================================================================
     conhecimento_query = TblStatusEstudo.objects.values('nivel_confianca').annotate(qtd=Count('id_status'))
-
     labels_conhecimento = []
     data_conhecimento = []
     for item in conhecimento_query:
@@ -328,9 +410,6 @@ def home(request):
         labels_conhecimento.append(label)
         data_conhecimento.append(item['qtd'])
 
-    # ========================================================================
-    # 4. DESEMPENHO EM QUESTÕES
-    # ========================================================================
     total_respostas = ResultadoQuestao.objects.count()
     total_acertos = ResultadoQuestao.objects.filter(foi_acerto=True).count()
     total_erros = ResultadoQuestao.objects.filter(foi_acerto=False).count()
@@ -342,10 +421,7 @@ def home(request):
     chart_simulado_labels = ['Acertos', 'Erros']
     chart_simulado_data = [total_acertos, total_erros]
 
-    # ========================================================================
-    # 5. TOTAIS GERAIS
-    # ========================================================================
-    total_topicos = TblTopicosMaster.objects.count()
+    total_topicos = total_topicos_all
 
     total_tempo_geral = TblSessaoEstudo.objects.aggregate(
         tempo=Sum(F('hora_fim') - F('hora_inicio'))
@@ -360,17 +436,16 @@ def home(request):
     if total_topicos > 0:
         percentual_concluido = round((card_topicos_iniciados / total_topicos) * 100, 1)
 
-    # ========================================================================
-    # 6. CONTEXTO PARA O TEMPLATE
-    # ========================================================================
     contexto = {
-        # Cards principais
+        'concursos_disponiveis': concursos_disponiveis,
+        'concurso_selecionado_id': concurso_id_str,
+        'concurso_selecionado_nome': concurso_nome,
+
         'horas_gerais': horas_gerais,
         'topicos_iniciados': card_topicos_iniciados,
         'total_topicos': total_topicos,
         'percentual_concluido': percentual_concluido,
 
-        # Dashboard de Cobertura (NOVO)
         'cobertura_total_topicos': total_topicos_all,
         'cobertura_com_ia': topicos_com_ia,
         'cobertura_com_material': topicos_com_material,
@@ -380,13 +455,11 @@ def home(request):
         'cobertura_perc_prontos': perc_prontos,
         'cobertura_por_materia': cobertura_por_materia,
 
-        # Dados do Simulado
         'total_questoes': total_respostas,
         'precisao_geral': precisao_geral,
         'chart_simulado_labels': json.dumps(chart_simulado_labels),
         'chart_simulado_data': json.dumps(chart_simulado_data),
 
-        # Gráficos
         'chart_horas_labels': json.dumps(labels_horas, cls=DjangoJSONEncoder),
         'chart_horas_data': json.dumps(data_horas, cls=DjangoJSONEncoder),
         'chart_status_labels': json.dumps(labels_status, cls=DjangoJSONEncoder),
@@ -404,9 +477,7 @@ def salvar_resultado_questao(request):
     if request.method == 'POST':
         try:
             dados = json.loads(request.body)
-
             print(f"DEBUG: Recebido questao_id={dados.get('questao_id')}, topico_id={dados.get('topico_id')}, acertou={dados.get('acertou')}")
-
             ResultadoQuestao.objects.create(
                 questao_id=int(dados.get('questao_id')),
                 topico_id=int(dados.get('topico_id')),
@@ -422,7 +493,6 @@ def salvar_resultado_questao(request):
 @login_required
 @require_POST
 def adicionar_material(request, id_topico):
-    """Adiciona um material de apoio ao tópico, vinculado ao usuário logado."""
     try:
         import json
         topico = get_object_or_404(TblTopicosMaster, id_topico=id_topico)
@@ -433,10 +503,7 @@ def adicionar_material(request, id_topico):
         tipo = dados.get('tipo') or 'video'
 
         if not titulo or not link:
-            return JsonResponse(
-                {'status': 'erro', 'mensagem': 'Título e link são obrigatórios.'},
-                status=400,
-            )
+            return JsonResponse({'status': 'erro', 'mensagem': 'Título e link são obrigatórios.'}, status=400)
 
         if tipo not in ['video', 'pdf', 'artigo', 'outro']:
             tipo = 'outro'
@@ -461,29 +528,19 @@ def adicionar_material(request, id_topico):
             }
         })
     except Exception as e:
-        return JsonResponse(
-            {'status': 'erro', 'mensagem': f'Erro ao adicionar: {str(e)}'},
-            status=500,
-        )
+        return JsonResponse({'status': 'erro', 'mensagem': f'Erro ao adicionar: {str(e)}'}, status=500)
 
 
 @login_required
 @require_POST
 def remover_material(request, id_material):
-    """Remove material de apoio — só o dono pode remover."""
     try:
         material = get_object_or_404(TblMaterialApoio, id_material=id_material)
 
         if material.usuario_id != request.user.id:
-            return JsonResponse(
-                {'status': 'erro', 'mensagem': 'Você não pode remover este material.'},
-                status=403,
-            )
+            return JsonResponse({'status': 'erro', 'mensagem': 'Você não pode remover este material.'}, status=403)
 
         material.delete()
         return JsonResponse({'status': 'sucesso'})
     except Exception as e:
-        return JsonResponse(
-            {'status': 'erro', 'mensagem': f'Erro ao remover: {str(e)}'},
-            status=500,
-        )
+        return JsonResponse({'status': 'erro', 'mensagem': f'Erro ao remover: {str(e)}'}, status=500)

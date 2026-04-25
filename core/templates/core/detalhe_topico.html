@@ -14,10 +14,19 @@
       </ol>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="text-primary mb-0">{{ topico.topico }}</h2>
             <span class="badge badge-nivel">{{ topico.nivel_3 }}</span>
+
+            {% if concursos_do_topico %}
+            <div class="mt-2">
+                <small class="text-muted">📋 Cobrado em:</small>
+                {% for nome_concurso in concursos_do_topico %}
+                    <span class="badge badge-concurso">{{ nome_concurso }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -520,7 +529,6 @@
         // MATERIAL DE APOIO — adicionar / remover via AJAX
         // ==========================================================
 
-        // Detecta URL do YouTube e busca o título via oEmbed (API pública, sem chave)
         function tentarAutoPreencherTitulo() {
             const linkInput = document.getElementById('novoMaterialLink');
             const tituloInput = document.getElementById('novoMaterialTitulo');
@@ -530,12 +538,10 @@
             const url = linkInput.value.trim();
             if (!url) return;
 
-            // Só tenta se for YouTube E o título ainda estiver vazio
             const ehYoutube = /(?:youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts\/)/i.test(url);
             if (!ehYoutube) return;
             if (tituloInput.value.trim() !== '') return;
 
-            // Auto-seleciona tipo "vídeo" pra URL do YouTube
             tipoSelect.value = 'video';
 
             statusDiv.classList.remove('d-none');
@@ -769,6 +775,17 @@
             background-color: var(--em-superficie-elevada);
             color: var(--em-texto-secundario);
             padding: 0.4em 0.75em;
+        }
+
+        /* Badge de concursos do tópico */
+        .badge-concurso {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: var(--em-info);
+            border: 1px solid var(--em-info);
+            padding: 0.35em 0.75em;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.25rem;
         }
 
         /* Modal */

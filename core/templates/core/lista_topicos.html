@@ -4,20 +4,20 @@
 
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'lista_materias' %}">Matérias</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'home' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'lista_materias' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}">Matérias</a></li>
         <li class="breadcrumb-item active" aria-current="page">{{ materia.nome_materia }}</li>
       </ol>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h2 class="text-primary fw-bold mb-0">{{ materia.nome_materia }}</h2>
             <p class="text-muted small mb-0">Selecione um tópico para aprofundar</p>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+            <a href="{% url 'home' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
                 📊 <span class="d-none d-md-inline ms-1">Painel</span>
             </a>
 
@@ -27,9 +27,20 @@
         </div>
     </div>
 
+    <!-- Indicador de concurso ativo -->
+    <div class="indicador-concurso mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+                🎯 <strong>Visualizando:</strong>
+                <span class="text-titulo">{{ concurso_selecionado_nome }}</span>
+            </span>
+            <a href="{% url 'home' %}" class="link-trocar">trocar concurso ↗</a>
+        </div>
+    </div>
+
     <div class="list-group shadow-sm topic-list">
         {% for topico in topicos %}
-            <a href="{% url 'detalhe_topico' topico.id_topico %}" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-start topic-item">
+            <a href="{% url 'detalhe_topico' topico.id_topico %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-start topic-item">
 
                 <div class="ms-2 me-auto">
                     <div class="fw-bold topic-title mb-1">
@@ -64,8 +75,14 @@
             <div class="alert alert-info text-center py-5 w-100">
                 <div class="fs-1 mb-3">📭</div>
                 <h5>Nenhum tópico encontrado</h5>
-                <p class="text-muted">Esta matéria ainda não possui conteúdo cadastrado no banco.</p>
-                <a href="{% url 'lista_materias' %}" class="btn btn-outline-primary btn-sm mt-2">Voltar</a>
+                <p class="text-muted">
+                    {% if concurso_selecionado_id != 'todos' %}
+                        Esta matéria não possui tópicos associados ao concurso <strong>{{ concurso_selecionado_nome }}</strong>.
+                    {% else %}
+                        Esta matéria ainda não possui conteúdo cadastrado no banco.
+                    {% endif %}
+                </p>
+                <a href="{% url 'lista_materias' %}{% if concurso_selecionado_id != 'todos' %}?concurso={{ concurso_selecionado_id }}{% endif %}" class="btn btn-outline-primary btn-sm mt-2">Voltar</a>
             </div>
         {% endfor %}
     </div>
@@ -111,7 +128,7 @@
             opacity: 1;
         }
 
-        /* Badge contador no topo (substitui bg-light) */
+        /* Badge contador no topo */
         .badge-contador {
             background-color: var(--em-superficie-elevada);
             color: var(--em-texto-primario);
@@ -127,6 +144,28 @@
         }
 
         .gap-2 { gap: 0.5rem; }
+
+        /* Indicador de concurso ativo */
+        .indicador-concurso {
+            background-color: var(--em-superficie-elevada);
+            border-left: 4px solid var(--em-info);
+            border-radius: var(--em-radius-md);
+            padding: 0.75rem 1rem;
+            color: var(--em-texto-primario);
+            font-size: 0.95rem;
+        }
+        .indicador-concurso .text-titulo {
+            color: var(--em-titulo);
+            font-weight: 600;
+        }
+        .indicador-concurso .link-trocar {
+            color: var(--em-info);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .indicador-concurso .link-trocar:hover {
+            text-decoration: underline;
+        }
     </style>
 
 {% endblock %}
